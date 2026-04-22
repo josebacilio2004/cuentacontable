@@ -9,8 +9,20 @@ const mockNotifications = [
   { id: 3, title: 'Límite de Presupuesto', message: 'Has alcanzado el 80% de tu presupuesto en Alimentación.', time: 'Ayer', type: 'info', unread: false },
 ];
 
-export function TopNav() {
+import { supabase } from '../lib/supabase';
+
+interface TopNavProps {
+  user: any;
+}
+
+export function TopNav({ user }: TopNavProps) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <nav className="fixed top-0 w-full z-30 h-16 bg-slate-950/40 backdrop-blur-md border-b border-white/5 flex justify-between items-center px-6 lg:pl-[264px] shadow-sm">
@@ -90,16 +102,20 @@ export function TopNav() {
         
         <div className="flex items-center gap-3 pl-4 border-l border-white/10">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-semibold text-white">Alex Thompson</p>
+            <p className="text-sm font-semibold text-white capitalize">{displayName}</p>
             <p className="text-[10px] text-slate-500 uppercase tracking-widest">Premium Member</p>
           </div>
-          <div className="w-8 h-8 rounded-full border border-indigo-500/20 overflow-hidden bg-slate-800">
+          <button 
+            onClick={handleLogout}
+            title="Cerrar Sesión"
+            className="w-8 h-8 rounded-full border border-indigo-500/20 overflow-hidden bg-slate-800 hover:ring-2 hover:ring-indigo-500 transition-all"
+          >
             <img 
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" 
+              src={avatarUrl} 
               alt="Avatar" 
               className="w-full h-full object-cover"
             />
-          </div>
+          </button>
         </div>
       </div>
     </nav>

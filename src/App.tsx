@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import { Sidebar, MobileNav } from './components/Sidebar';
 import { TopNav } from './components/TopNav';
 import { Dashboard } from './pages/Dashboard';
@@ -25,13 +27,13 @@ const ComingSoon = ({ title }: { title: string }) => (
   </div>
 );
 
-function LayoutShell({ children }: { children: React.ReactNode }) {
+function LayoutShell({ children, user }: { children: React.ReactNode, user: any }) {
   const location = useLocation();
   
   return (
     <div className="min-h-screen bg-background selection:bg-indigo-500/30">
       <Sidebar />
-      <TopNav />
+      <TopNav user={user} />
       
       <main className="pt-24 pb-28 lg:pb-12 px-6 lg:pl-[264px] lg:pr-12 max-w-[1600px] mx-auto min-h-screen">
         <AnimatePresence mode="wait">
@@ -57,15 +59,37 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [session, setSession] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#050811] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <LoginPage onLogin={() => {}} />;
   }
 
   return (
     <Router>
-      <LayoutShell>
+      <LayoutShell user={session.user}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/ingresos" element={<IncomePage />} />

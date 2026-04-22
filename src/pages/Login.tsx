@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 import { Card } from '../components/UI';
 import { cn } from '../lib/utils';
 
+import { supabase } from '../lib/supabase';
+
 interface LoginProps {
   onLogin: () => void;
 }
@@ -27,18 +29,30 @@ export function LoginPage({ onLogin }: LoginProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSelectUser = (user: typeof users[0]) => {
     setEmail(user.email);
     setPassword(user.pass);
+    setError(null);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setError(null);
+    
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setIsLoading(false);
+    } else {
       onLogin();
-    }, 1500);
+    }
   };
 
   return (
@@ -116,6 +130,12 @@ export function LoginPage({ onLogin }: LoginProps) {
                 Enter your credentials to access your treasury.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                {error}
+              </div>
+            )}
 
             <Card className="p-0 border-none bg-transparent shadow-none">
               <form onSubmit={handleLogin} className="space-y-6">
