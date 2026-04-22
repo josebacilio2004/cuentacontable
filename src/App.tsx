@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar, MobileNav } from './components/Sidebar';
@@ -12,6 +12,7 @@ import { FixedAccountsPage } from './pages/FixedAccounts';
 import { ReportsPage } from './pages/Reports';
 import { HouseholdPage } from './pages/Household';
 import { SettingsPage } from './pages/Settings';
+import { LoginPage } from './pages/Login';
 
 // Page placeholders for now
 const ComingSoon = ({ title }: { title: string }) => (
@@ -56,6 +57,12 @@ function LayoutShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <Router>
       <LayoutShell>
