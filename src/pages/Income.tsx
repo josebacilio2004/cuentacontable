@@ -141,7 +141,7 @@ export function IncomePage() {
                   {incomes.map((tx) => (
                     <tr key={tx.id} className="group hover:bg-white/5 transition-colors">
                       <td className="px-6 py-5 text-slate-300 text-sm whitespace-nowrap">
-                        {format(new Date(tx.date), 'dd MMM', { locale: es })}
+                        {format(new Date(tx.date + 'T12:00:00'), 'dd MMM', { locale: es })}
                       </td>
                       <td className="px-6 py-5">
                         <div className="font-medium text-white">{tx.category}</div>

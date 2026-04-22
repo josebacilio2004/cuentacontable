@@ -97,7 +97,7 @@ export function HouseholdPage() {
                       <div>
                         <h4 className="font-bold text-white">{tx.category}</h4>
                         <div className="text-xs text-slate-500 mt-1">
-                           Registrado por <span className="text-indigo-400 font-bold">@usuario</span> • {format(new Date(tx.date), 'dd MMM', { locale: es })}
+                           Registrado por <span className="text-indigo-400 font-bold">@usuario</span> • {format(new Date(tx.date + 'T12:00:00'), 'dd MMM', { locale: es })}
                         </div>
                       </div>
                     </div>

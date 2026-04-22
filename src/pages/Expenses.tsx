@@ -266,7 +266,7 @@ export function ExpensesPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-white text-lg leading-tight">{tx.category}</h3>
-                      <div className="text-xs text-slate-500 mt-1">{format(new Date(tx.date), 'dd MMM, yyyy', { locale: es })}</div>
+                      <div className="text-xs text-slate-500 mt-1">{format(new Date(tx.date + 'T12:00:00'), 'dd MMM, yyyy', { locale: es })}</div>
                     </div>
                   </div>
                   <button 

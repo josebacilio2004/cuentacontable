@@ -180,7 +180,7 @@ export function FixedAccountsPage() {
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Próximo Pago</p>
                       <div className="flex items-center gap-2 text-white font-medium">
                          <Calendar size={14} className="text-indigo-400" />
-                         {acc.next_due_date ? format(new Date(acc.next_due_date), 'dd MMM', { locale: es }) : 'N/A'}
+                         {acc.next_due_date ? format(new Date(acc.next_due_date + 'T12:00:00'), 'dd MMM', { locale: es }) : 'N/A'}
                       </div>
                    </div>
                    <div className="text-right">
