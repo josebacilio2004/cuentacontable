@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Card, KPI } from '../components/UI';
+import { cn } from '../lib/utils';
 import { 
   BarChart, 
   Bar, 

@@ -88,7 +88,7 @@ export default function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/cuentacontable">
       <LayoutShell user={session.user}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
