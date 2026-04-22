@@ -76,35 +76,31 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#050811] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <LoginPage onLogin={() => {}} />;
-  }
-
   return (
     <TranslationProvider>
-      <Router>
-        <LayoutShell user={session.user}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/ingresos" element={<IncomePage />} />
-            <Route path="/egresos" element={<ExpensesPage />} />
-            <Route path="/presupuesto" element={<BudgetPage />} />
-            <Route path="/creditos" element={<CreditsPage />} />
-            <Route path="/cuentas-fijas" element={<FixedAccountsPage />} />
-            <Route path="/reportes" element={<ReportsPage />} />
-            <Route path="/vista-hogar" element={<HouseholdPage />} />
-            <Route path="/configuracion" element={<SettingsPage />} />
-          </Routes>
-        </LayoutShell>
-      </Router>
+      {loading ? (
+        <div className="min-h-screen bg-[#050811] flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
+        </div>
+      ) : !session ? (
+        <LoginPage onLogin={() => {}} />
+      ) : (
+        <Router>
+          <LayoutShell user={session.user}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/ingresos" element={<IncomePage />} />
+              <Route path="/egresos" element={<ExpensesPage />} />
+              <Route path="/presupuesto" element={<BudgetPage />} />
+              <Route path="/creditos" element={<CreditsPage />} />
+              <Route path="/cuentas-fijas" element={<FixedAccountsPage />} />
+              <Route path="/reportes" element={<ReportsPage />} />
+              <Route path="/vista-hogar" element={<HouseholdPage />} />
+              <Route path="/configuracion" element={<SettingsPage />} />
+            </Routes>
+          </LayoutShell>
+        </Router>
+      )}
     </TranslationProvider>
   );
 }
