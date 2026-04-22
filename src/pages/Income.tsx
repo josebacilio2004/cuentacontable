@@ -68,7 +68,9 @@ export function IncomePage() {
       is_shared: isShared
     });
 
-    if (!error) {
+    if (error) {
+      alert(`Error al guardar: ${error.message}. Por favor, asegúrate de haber ejecutado el script SQL en Supabase.`);
+    } else {
       setAmount('');
       setDescription('');
       fetchIncomes(user.id);
