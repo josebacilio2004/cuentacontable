@@ -14,17 +14,19 @@ import { Card } from '../components/UI';
 import { cn } from '../lib/utils';
 
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../lib/i18n';
 
 interface LoginProps {
   onLogin: () => void;
 }
 
 const users = [
-  { id: 'jose', name: 'Jose', email: 'baciliodelacruz.2004@gmail.com', pass: 'josebac2004A$', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' },
-  { id: 'samira', name: 'Samira', email: 'sxchecya-es@udabol.edu.bo', pass: '60621566ssam', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
+  { id: 'jose', name: 'José Bacilio', email: 'baciliodelacruz.2004@gmail.com', pass: 'josebac2004A$', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' },
+  { id: 'samira', name: 'Ssamira Checya', email: 'sxchecya-es@udabol.edu.bo', pass: '60621566ssam', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
 ];
 
 export function LoginPage({ onLogin }: LoginProps) {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
@@ -33,7 +35,7 @@ export function LoginPage({ onLogin }: LoginProps) {
 
   const handleSelectUser = (user: typeof users[0]) => {
     setEmail(user.email);
-    setPassword(user.pass);
+    setPassword('');
     setError(null);
   };
 

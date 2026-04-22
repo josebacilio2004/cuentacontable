@@ -13,20 +13,22 @@ import {
   MessageSquareCode
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', to: '/' },
-  { icon: HandCoins, label: 'Ingresos', to: '/ingresos' },
-  { icon: ShoppingBag, label: 'Egresos', to: '/egresos' },
-  { icon: CreditCard, label: 'Créditos', to: '/creditos' },
-  { icon: Repeat, label: 'Cuentas Fijas', to: '/cuentas-fijas' },
-  { icon: BarChart3, label: 'Reportes', to: '/reportes' },
-  { icon: Wallet, label: 'Presupuesto', to: '/presupuesto' },
-  { icon: Users, label: 'Vista Hogar', to: '/vista-hogar' },
-  { icon: Settings, label: 'Configuración', to: '/configuracion' },
-];
+import { useTranslation } from '../lib/i18n';
 
 export function Sidebar() {
+  const { t } = useTranslation();
+  
+  const navItems = [
+    { icon: LayoutDashboard, label: t('nav.dashboard'), to: '/' },
+    { icon: HandCoins, label: t('nav.income'), to: '/ingresos' },
+    { icon: ShoppingBag, label: t('nav.expenses'), to: '/egresos' },
+    { icon: CreditCard, label: t('nav.credits'), to: '/creditos' },
+    { icon: Repeat, label: t('nav.fixed'), to: '/cuentas-fijas' },
+    { icon: BarChart3, label: t('nav.reports'), to: '/reportes' },
+    { icon: Wallet, label: t('nav.budget'), to: '/presupuesto' },
+    { icon: Users, label: t('nav.household'), to: '/vista-hogar' },
+    { icon: Settings, label: t('nav.settings'), to: '/configuracion' },
+  ];
   return (
     <aside className="hidden lg:flex flex-col h-screen fixed left-0 top-0 z-40 w-60 bg-sidebar/60 backdrop-blur-xl border-r border-white/10 shadow-2xl">
       <div className="p-8 flex items-center gap-3">
@@ -70,20 +72,27 @@ export function Sidebar() {
 }
 
 export function MobileNav() {
+  const { t } = useTranslation();
+  const navItems = [
+    { icon: LayoutDashboard, label: t('nav.dashboard'), to: '/' },
+    { icon: HandCoins, label: t('nav.income'), to: '/ingresos' },
+    { icon: ShoppingBag, label: t('nav.expenses'), to: '/egresos' },
+    { icon: CreditCard, label: t('nav.credits'), to: '/creditos' },
+  ];
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 w-full z-50 h-20 bg-slate-900/80 backdrop-blur-2xl rounded-t-3xl border-t border-white/10 flex justify-around items-center px-4">
-      {navItems.slice(0, 4).map((item) => (
+      {navItems.map((item) => (
          <NavLink
-         key={item.to}
-         to={item.to}
-         className={({ isActive }) => cn(
-           "flex flex-col items-center gap-1 text-slate-500 transition-all",
-           isActive && "text-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]"
-         )}
-       >
-         <item.icon size={20} />
-         <span className="text-[10px] font-medium uppercase tracking-tighter">{item.label}</span>
-       </NavLink>
+          key={item.to}
+          to={item.to}
+          className={({ isActive }) => cn(
+            "flex flex-col items-center gap-1 text-slate-500 transition-all",
+            isActive && "text-indigo-400 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]"
+          )}
+        >
+          <item.icon size={20} />
+          <span className="text-[10px] font-medium uppercase tracking-tighter">{item.label}</span>
+        </NavLink>
       ))}
     </nav>
   );

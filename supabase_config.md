@@ -32,9 +32,23 @@ CREATE TABLE IF NOT EXISTS credits (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Tabla de Cuentas Fijas
+CREATE TABLE IF NOT EXISTS fixed_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  cycle TEXT DEFAULT 'Mensual',
+  next_due_date DATE,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE credits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fixed_accounts ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para Transactions
 CREATE POLICY "Users can manage their own transactions" 
@@ -44,6 +58,11 @@ USING (auth.uid() = user_id);
 -- Políticas para Credits
 CREATE POLICY "Users can manage their own credits" 
 ON credits FOR ALL 
+USING (auth.uid() = user_id);
+
+-- Políticas para Fixed Accounts
+CREATE POLICY "Users can manage their own fixed accounts" 
+ON fixed_accounts FOR ALL 
 USING (auth.uid() = user_id);
 ```
 

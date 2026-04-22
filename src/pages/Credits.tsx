@@ -14,10 +14,12 @@ import {
 import { Card } from '../components/UI';
 import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../lib/i18n';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function CreditsPage() {
+  const { t } = useTranslation();
   const [credits, setCredits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,7 +104,7 @@ export function CreditsPage() {
     <div className="space-y-10 pb-12 animate-in fade-in duration-500">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">Créditos</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">{t('nav.credits')}</h1>
           <p className="text-slate-400">Gestiona tus líneas de crédito y préstamos activos.</p>
         </div>
         <button 
@@ -110,7 +112,7 @@ export function CreditsPage() {
           className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2"
         >
           {showForm ? <X size={20} /> : <Plus size={20} />}
-          {showForm ? 'Cerrar' : 'Nuevo Crédito'}
+          {showForm ? t('cancel') : t('add.credit')}
         </button>
       </div>
 
@@ -123,7 +125,7 @@ export function CreditsPage() {
               <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Ej: BCP, BBVA" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Monto Total</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('amount')} Total</label>
               <input type="number" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
             <div className="space-y-2">
@@ -151,7 +153,7 @@ export function CreditsPage() {
           </div>
           <div className="mt-8 flex justify-end">
             <button onClick={handleSave} disabled={saving} className="px-10 py-3 bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2">
-              {saving ? <Loader2 className="animate-spin" /> : 'Registrar Crédito'}
+              {saving ? <Loader2 className="animate-spin" /> : t('save')}
             </button>
           </div>
         </Card>
@@ -161,7 +163,7 @@ export function CreditsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 border-l-4 border-indigo-500 border-white/5">
            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Deuda Total</p>
-           <p className="text-3xl font-black text-white">${totalDebt.toLocaleString()}</p>
+           <p className="text-3xl font-black text-white">{t('currency')}{totalDebt.toLocaleString()}</p>
            <div className="mt-4 flex items-center gap-2 text-emerald-400 text-xs font-bold">
               <TrendingDown size={14} />
               Calculado real
@@ -191,11 +193,11 @@ export function CreditsPage() {
            
            {loading ? (
              <div className="flex items-center justify-center h-64 text-slate-500">
-               <Loader2 className="animate-spin mr-2" /> Cargando créditos...
+               <Loader2 className="animate-spin mr-2" /> {t('loading')}
              </div>
            ) : credits.length === 0 ? (
              <div className="flex items-center justify-center h-64 text-slate-500 italic">
-               No hay créditos registrados.
+               {t('no.data')}
              </div>
            ) : (
              <div className="grid grid-cols-1 gap-4">
@@ -229,7 +231,7 @@ export function CreditsPage() {
                       <div className="flex items-center gap-8 justify-between md:justify-end">
                           <div className="text-right">
                             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Próximo Pago</p>
-                            <p className="text-sm font-bold text-white">${Number(loan.monthly_payment).toLocaleString()} • {loan.due_date ? format(new Date(loan.due_date), 'dd MMM', { locale: es }) : 'N/A'}</p>
+                            <p className="text-sm font-bold text-white">{t('currency')}{Number(loan.monthly_payment).toLocaleString()} • {loan.due_date ? format(new Date(loan.due_date), 'dd MMM', { locale: es }) : 'N/A'}</p>
                           </div>
                           <button 
                             onClick={() => handleDelete(loan.id)}

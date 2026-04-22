@@ -10,14 +10,21 @@ const mockNotifications = [
 ];
 
 import { supabase } from '../lib/supabase';
+import { useTranslation } from '../lib/i18n';
 
 interface TopNavProps {
   user: any;
 }
 
+const userNames: Record<string, string> = {
+  'baciliodelacruz.2004@gmail.com': 'José Bacilio',
+  'sxchecya-es@udabol.edu.bo': 'Ssamira Checya'
+};
+
 export function TopNav({ user }: TopNavProps) {
+  const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
-  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const displayName = userNames[user?.email] || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
 
   const handleLogout = async () => {

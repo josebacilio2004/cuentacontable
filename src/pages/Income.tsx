@@ -16,8 +16,10 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTranslation } from '../lib/i18n';
 
 export function IncomePage() {
+  const { t } = useTranslation();
   const [incomes, setIncomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,7 +27,7 @@ export function IncomePage() {
 
   // Form State
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Salario');
+  const [category, setCategory] = useState('Negocio 1');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [isShared, setIsShared] = useState(false);
@@ -96,8 +98,8 @@ export function IncomePage() {
         </div>
         
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-8 py-4 flex flex-col items-end shadow-[0_0_15px_rgba(78,222,163,0.1)]">
-          <span className="text-emerald-400 font-bold uppercase tracking-widest text-[10px]">Total Recibido</span>
-          <span className="text-4xl font-bold text-emerald-400 tracking-tight">${totalIncome.toLocaleString()}</span>
+          <span className="text-emerald-400 font-bold uppercase tracking-widest text-[10px]">{t('total.received')}</span>
+          <span className="text-4xl font-bold text-emerald-400 tracking-tight">{t('currency')}{totalIncome.toLocaleString()}</span>
         </div>
       </div>
 
@@ -116,20 +118,20 @@ export function IncomePage() {
           <div className="overflow-x-auto min-h-[300px]">
             {loading ? (
               <div className="flex items-center justify-center h-64 text-slate-500">
-                <Loader2 className="animate-spin mr-2" /> Cargando datos...
+                <Loader2 className="animate-spin mr-2" /> {t('loading')}
               </div>
             ) : incomes.length === 0 ? (
               <div className="flex items-center justify-center h-64 text-slate-500 italic">
-                No hay ingresos registrados este mes.
+                {t('no.data')}
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5">
-                    <th className="px-6 py-4">Fecha</th>
-                    <th className="px-6 py-4">Descripción</th>
-                    <th className="px-6 py-4">Categoría</th>
-                    <th className="px-6 py-4 text-right">Monto</th>
+                    <th className="px-6 py-4">{t('date')}</th>
+                    <th className="px-6 py-4">{t('description')}</th>
+                    <th className="px-6 py-4">{t('category')}</th>
+                    <th className="px-6 py-4 text-right">{t('amount')}</th>
                     <th className="px-6 py-4"></th>
                   </tr>
                 </thead>
@@ -148,7 +150,7 @@ export function IncomePage() {
                           {tx.category}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-right font-bold text-emerald-400">${Number(tx.amount).toLocaleString()}</td>
+                      <td className="px-6 py-5 text-right font-bold text-emerald-400">{t('currency')}{Number(tx.amount).toLocaleString()}</td>
                       <td className="px-6 py-5 text-right">
                         <button 
                           onClick={() => handleDelete(tx.id)}
@@ -168,13 +170,13 @@ export function IncomePage() {
         {/* Side Panel: Add Income */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <Card className="p-6 bg-slate-900/80 border-white/10">
-            <h3 className="text-xl font-bold text-white mb-8">Añadir Ingreso</h3>
+            <h3 className="text-xl font-bold text-white mb-8">{t('add.income')}</h3>
             
             <div className="space-y-6">
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Monto del Ingreso</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">{t('amount')}</label>
                 <div className="relative">
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl font-bold text-emerald-400 ">$</span>
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl font-bold text-emerald-400 ">{t('currency')}</span>
                   <input 
                     type="number" 
                     value={amount}
@@ -186,32 +188,32 @@ export function IncomePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descripción</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('description')}</label>
                 <input 
                   type="text" 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ej: Bono Trimestral"
+                  placeholder="Ej: Retorno Inversión"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoría</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('category')}</label>
                   <select 
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-[#0f172a] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-500"
                   >
-                    <option value="Salario">Salario</option>
-                    <option value="Freelance">Freelance</option>
+                    <option value="Negocio 1">Negocio 1</option>
+                    <option value="Negocio 2">Negocio 2</option>
                     <option value="Inversión">Inversión</option>
                     <option value="Otro">Otro</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('date')}</label>
                   <input 
                     type="date" 
                     value={date}
@@ -221,25 +223,12 @@ export function IncomePage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer" onClick={() => setIsShared(!isShared)}>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-white">Gasto Compartido</span>
-                  <span className="text-[10px] text-slate-500">Visible en Vista Hogar</span>
-                </div>
-                <div className={cn(
-                  "w-11 h-6 rounded-full p-1 transition-colors duration-200 flex items-center",
-                  isShared ? "bg-indigo-500" : "bg-white/10"
-                )}>
-                  <div className={cn("w-4 h-4 bg-white rounded-full shadow-sm transition-transform", isShared ? "translate-x-5" : "translate-x-0")} />
-                </div>
-              </div>
-
               <button 
                 onClick={handleSave}
                 disabled={saving || !amount}
                 className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
               >
-                {saving ? <Loader2 className="animate-spin" /> : 'Guardar Ingreso'}
+                {saving ? <Loader2 className="animate-spin" /> : t('save')}
               </button>
             </div>
           </Card>

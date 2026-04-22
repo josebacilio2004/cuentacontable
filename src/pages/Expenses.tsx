@@ -23,6 +23,7 @@ import { cn } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTranslation } from '../lib/i18n';
 
 const categoryIcons: any = {
   'Alimentación': Utensils,
@@ -43,6 +44,7 @@ const categoryColors: any = {
 };
 
 export function ExpensesPage() {
+  const { t } = useTranslation();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -114,15 +116,15 @@ export function ExpensesPage() {
     <div className="space-y-8 pb-12 animate-in fade-in duration-500">
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">Egresos</h1>
-          <p className="text-slate-500">Control detallado de tus salidas de dinero.</p>
+          <h1 className="text-4xl font-bold text-white mb-2">{t('nav.expenses')}</h1>
+          <p className="text-slate-400">Control detallado de tus salidas de dinero.</p>
         </div>
         <button 
           onClick={() => setShowAddForm(!showAddForm)}
           className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-2xl font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-indigo-500/20"
         >
           {showAddForm ? <X size={20} /> : <Plus size={20} />}
-          {showAddForm ? 'Cerrar' : 'Nuevo Egreso'}
+          {showAddForm ? t('cancel') : t('add.expense')}
         </button>
       </div>
 
@@ -130,9 +132,9 @@ export function ExpensesPage() {
         <Card className="p-8 bg-slate-900/80 border-indigo-500/30 animate-in slide-in-from-top-4 duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">Monto del Egreso</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 ml-1">{t('amount')}</label>
               <div className="relative">
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl font-bold text-rose-400 ">$</span>
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl font-bold text-rose-400 ">{t('currency')}</span>
                 <input 
                   type="number" 
                   value={amount}
@@ -145,7 +147,7 @@ export function ExpensesPage() {
             
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Descripción / Nota</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('description')}</label>
                 <input 
                   type="text" 
                   value={description}
@@ -156,7 +158,7 @@ export function ExpensesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Categoría</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('category')}</label>
                   <select 
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
@@ -171,7 +173,7 @@ export function ExpensesPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">{t('date')}</label>
                   <input 
                     type="date" 
                     value={date}
@@ -184,7 +186,7 @@ export function ExpensesPage() {
           </div>
           <div className="mt-8 flex justify-end gap-4">
             <div className="flex items-center gap-3 px-6 py-2 bg-white/5 rounded-xl border border-white/5 cursor-pointer" onClick={() => setIsShared(!isShared)}>
-              <span className="text-xs font-semibold text-slate-400">Gasto Compartido</span>
+              <span className="text-xs font-semibold text-slate-400">{t('shared')}</span>
               <div className={cn("w-8 h-4 rounded-full p-1 transition-colors duration-200 flex items-center", isShared ? "bg-indigo-500" : "bg-white/10")}>
                 <div className={cn("w-2.5 h-2.5 bg-white rounded-full shadow-sm transition-transform", isShared ? "translate-x-3.5" : "translate-x-0")} />
               </div>
@@ -194,7 +196,7 @@ export function ExpensesPage() {
               disabled={saving || !amount}
               className="px-10 py-3 bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
             >
-              {saving ? <Loader2 className="animate-spin w-5 h-5" /> : 'Guardar Egreso'}
+              {saving ? <Loader2 className="animate-spin w-5 h-5" /> : t('save')}
             </button>
           </div>
         </Card>
@@ -204,8 +206,8 @@ export function ExpensesPage() {
       <section className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <Card className="p-6 md:col-span-2 lg:col-span-1 flex flex-col justify-between border-white/5">
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">GASTO TOTAL</p>
-            <p className="text-4xl font-extrabold text-white tracking-tight">${totalExpense.toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('total.spent')}</p>
+            <p className="text-4xl font-extrabold text-white tracking-tight">{t('currency')}{totalExpense.toLocaleString()}</p>
           </div>
           <div className="mt-4 flex items-center text-rose-400 font-bold text-xs gap-1">
             <ArrowUp size={14} />
@@ -244,11 +246,11 @@ export function ExpensesPage() {
       {/* Grid of Expenses */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-slate-500">
-          <Loader2 className="animate-spin mr-2" /> Cargando egresos...
+          <Loader2 className="animate-spin mr-2" /> {t('loading')}
         </div>
       ) : expenses.length === 0 ? (
         <div className="flex items-center justify-center h-64 text-slate-500 italic">
-          No hay egresos registrados. Comienza añadiendo uno arriba.
+          {t('no.data')}
         </div>
       ) : (
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -277,7 +279,7 @@ export function ExpensesPage() {
                 
                 <div className="flex justify-between items-end border-t border-white/5 pt-4">
                   <div className="text-xs font-medium text-slate-500 italic max-w-[150px] truncate">{tx.description || 'Sin descripción'}</div>
-                  <div className="text-2xl font-black text-white">${Number(tx.amount).toLocaleString()}</div>
+                  <div className="text-2xl font-black text-white">{t('currency')}{Number(tx.amount).toLocaleString()}</div>
                 </div>
               </Card>
             );

@@ -1,99 +1,171 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
+  Globe, 
+  Moon, 
   Shield, 
   Bell, 
-  Moon, 
-  Globe, 
-  Smartphone, 
   CreditCard, 
-  LogOut,
+  Smartphone,
+  Save,
+  CheckCircle2,
   ChevronRight,
-  Sparkles
+  LogOut
 } from 'lucide-react';
 import { Card } from '../components/UI';
 import { cn } from '../lib/utils';
+import { useTranslation } from '../lib/i18n';
+import { supabase } from '../lib/supabase';
+
+const userNames: Record<string, string> = {
+  'baciliodelacruz.2004@gmail.com': 'José Bacilio',
+  'sxchecya-es@udabol.edu.bo': 'Ssamira Checya'
+};
 
 export function SettingsPage() {
+  const { language, setLanguage, t } = useTranslation();
+  const [user, setUser] = useState<any>(null);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
+
+  const handleSave = () => {
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  const displayName = userNames[user?.email] || user?.email?.split('@')[0] || 'User';
+
   return (
-    <div className="space-y-10 pb-12">
-      <div>
-        <h1 className="text-4xl font-bold text-white mb-2">Configuración</h1>
-        <p className="text-slate-400">Personaliza tu experiencia y gestiona tus preferencias de seguridad.</p>
+    <div className="max-w-4xl mx-auto space-y-8 pb-12 animate-in fade-in duration-500">
+      <div className="flex justify-between items-end mb-10">
+        <div>
+          <h1 className="text-4xl font-bold text-white mb-2">{t('nav.settings')}</h1>
+          <p className="text-slate-400">Gestiona tus preferencias y seguridad de la cuenta.</p>
+        </div>
+        <button 
+          onClick={handleSave}
+          className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
+        >
+          {isSaved ? <CheckCircle2 size={20} /> : <Save size={20} />}
+          {isSaved ? 'Guardado' : t('save')}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Navigation Sidebar */}
-        <aside className="lg:col-span-4 space-y-2">
-           <SettingsNavItem icon={User} label="Perfil del Usuario" active />
-           <SettingsNavItem icon={Shield} label="Seguridad & Privacidad" />
-           <SettingsNavItem icon={Bell} label="Notificaciones" />
-           <SettingsNavItem icon={Moon} label="Interfaz & Apariencia" />
-           <SettingsNavItem icon={Globe} label="Idioma & Región" />
-           <SettingsNavItem icon={Smartphone} label="Dispositivos Vinculados" />
-           <SettingsNavItem icon={CreditCard} label="Suscripción CuentaContable" />
-           
-           <div className="pt-6 mt-6 border-t border-white/5">
-              <button className="flex items-center gap-3 px-4 py-3 text-rose-400 hover:bg-rose-500/10 transition-all rounded-xl w-full">
-                <LogOut size={20} />
-                <span className="font-semibold">Cerrar Sesión</span>
-              </button>
-           </div>
-        </aside>
-
-        {/* Content Area */}
-        <div className="lg:col-span-8 space-y-8">
-          <Card className="p-8">
-             <div className="flex justify-between items-start mb-10">
-                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Perfil Público</h3>
-                <button className="px-4 py-2 bg-indigo-600 text-xs font-bold text-white rounded-lg hover:bg-indigo-500 transition-all">
-                   Editar Perfil
-                </button>
-             </div>
-             
-             <div className="flex flex-col sm:flex-row gap-8 items-center mb-10">
-                <div className="relative group cursor-pointer">
-                   <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-indigo-500/30">
-                      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Profile" className="w-full h-full object-cover" />
-                   </div>
-                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl">
-                      <Sparkles size={20} className="text-white" />
-                   </div>
-                </div>
-                <div className="space-y-1 text-center sm:text-left">
-                   <h4 className="text-2xl font-bold text-white">Alex Thompson</h4>
-                   <p className="text-slate-400">baciliodelacruz.2004@gmail.com</p>
-                   <div className="flex gap-2 mt-4 justify-center sm:justify-start">
-                      <span className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Premium Member</span>
-                      <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Verified Account</span>
-                   </div>
-                </div>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
-                   <input type="text" defaultValue="Alex Thompson" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-indigo-500 outline-none" />
-                </div>
-                <div className="space-y-2">
-                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Zona Horaria</label>
-                   <select className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-1 focus:ring-indigo-500 outline-none">
-                      <option>GMT-5 (Lima/Bogotá)</option>
-                      <option>GMT-3 (Buenos Aires)</option>
-                      <option>UTC+1 (Madrid/París)</option>
-                   </select>
-                </div>
-             </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Profile Sidebar */}
+        <div className="md:col-span-1 space-y-6">
+          <Card className="p-8 text-center border-white/5">
+            <div className="relative inline-block mb-4">
+              <div className="w-24 h-24 rounded-3xl bg-indigo-500/20 flex items-center justify-center border-2 border-indigo-500/30 overflow-hidden">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} 
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-500 rounded-xl border-4 border-[#050811] flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-white">{displayName}</h2>
+            <p className="text-xs text-slate-500 mt-1">{user?.email}</p>
+            <div className="mt-6 pt-6 border-t border-white/5">
+              <div className="flex justify-between text-sm mb-4">
+                <span className="text-slate-400">Estado</span>
+                <span className="text-emerald-400 font-bold">Premium</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-400">Miembro desde</span>
+                <span className="text-white">Oct 2023</span>
+              </div>
+            </div>
           </Card>
 
-          <Card className="p-8">
-             <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-8">Preferencias de Interfaz</h3>
-             <div className="space-y-6">
-                <ToggleItem label="Habilitar Modo Oscuro Automático" active />
-                <ToggleItem label="Compactar Tablas de Transacciones" />
-                <ToggleItem label="Mostrar Saldo en Dashboard" active />
-                <ToggleItem label="Sonidos de Confirmación de Pago" />
-             </div>
+          <nav className="space-y-1">
+             <SettingsLink icon={User} label="Perfil" active />
+             <SettingsLink icon={Shield} label="Seguridad" />
+             <SettingsLink icon={Bell} label="Notificaciones" />
+             <SettingsLink icon={CreditCard} label="Suscripción" />
+          </nav>
+        </div>
+
+        {/* Content Area */}
+        <div className="md:col-span-2 space-y-6">
+          <Card className="p-8 space-y-8 border-white/5">
+            <div>
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <Globe size={20} className="text-indigo-400" />
+                Preferencias de Región
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Idioma / Language</label>
+                   <select 
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as any)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
+                   >
+                     <option value="es">Español (S/)</option>
+                     <option value="en">English ($)</option>
+                   </select>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Moneda Local</label>
+                   <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-400 cursor-not-allowed">
+                     {language === 'es' ? 'Soles (PEN)' : 'US Dollars (USD)'}
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-8 border-t border-white/5">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                <Moon size={20} className="text-indigo-400" />
+                Interfaz
+              </h3>
+              <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div>
+                  <p className="font-bold text-white text-sm">Modo Oscuro</p>
+                  <p className="text-xs text-slate-500">Optimizado para pantallas OLED</p>
+                </div>
+                <div className="w-12 h-6 bg-indigo-500 rounded-full p-1 flex items-center justify-end">
+                  <div className="w-4 h-4 bg-white rounded-full"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-8 border-t border-white/5">
+              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2 text-rose-400">
+                <Shield size={20} />
+                Zona Peligrosa
+              </h3>
+              <div className="flex flex-col gap-4">
+                 <button className="w-full p-4 rounded-2xl border border-white/5 hover:bg-white/5 text-left group transition-all">
+                    <div className="flex justify-between items-center">
+                       <div>
+                          <p className="font-bold text-white text-sm">Cerrar Sesión en otros dispositivos</p>
+                          <p className="text-xs text-slate-500">Tu sesión se cerrará en tablets y laptops vinculadas.</p>
+                       </div>
+                       <ChevronRight size={18} className="text-slate-600 group-hover:text-white transition-colors" />
+                    </div>
+                 </button>
+                 <button 
+                  onClick={() => supabase.auth.signOut()}
+                  className="w-full p-4 rounded-2xl border border-rose-500/20 hover:bg-rose-500/10 text-left group transition-all"
+                 >
+                    <div className="flex justify-between items-center">
+                       <div>
+                          <p className="font-bold text-rose-400 text-sm">Eliminar Cuenta</p>
+                          <p className="text-xs text-rose-500/60">Esta acción no se puede deshacer.</p>
+                       </div>
+                       <LogOut size={18} className="text-rose-400" />
+                    </div>
+                 </button>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
@@ -101,34 +173,14 @@ export function SettingsPage() {
   );
 }
 
-function SettingsNavItem({ icon: Icon, label, active }: any) {
+function SettingsLink({ icon: Icon, label, active = false }: any) {
   return (
     <button className={cn(
-      "w-full flex items-center justify-between px-4 py-4 rounded-xl transition-all group",
-      active ? "bg-white/5 text-indigo-400 border border-white/10" : "text-slate-400 hover:text-slate-100 hover:bg-white/5"
+      "w-full flex items-center gap-3 px-6 py-4 rounded-2xl transition-all font-bold text-sm",
+      active ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "text-slate-400 hover:bg-white/5 hover:text-white"
     )}>
-      <div className="flex items-center gap-3">
-         <Icon size={20} className={active ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-300"} />
-         <span className="font-semibold text-sm">{label}</span>
-      </div>
-      <ChevronRight size={16} className={active ? "opacity-100" : "opacity-0 group-hover:opacity-100 text-slate-600 transition-opacity"} />
+      <Icon size={18} />
+      {label}
     </button>
-  );
-}
-
-function ToggleItem({ label, active }: any) {
-  return (
-    <div className="flex items-center justify-between">
-       <span className="text-sm font-medium text-slate-300">{label}</span>
-       <div className={cn(
-         "w-10 h-5 rounded-full p-1 cursor-pointer transition-colors duration-200",
-         active ? "bg-indigo-500" : "bg-white/10"
-       )}>
-         <div className={cn(
-           "w-3 h-3 bg-white rounded-full transition-transform duration-200 shadow-sm",
-           active ? "translate-x-5" : "translate-x-0"
-         )} />
-       </div>
-    </div>
   );
 }

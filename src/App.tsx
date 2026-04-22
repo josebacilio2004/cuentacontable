@@ -15,6 +15,7 @@ import { ReportsPage } from './pages/Reports';
 import { HouseholdPage } from './pages/Household';
 import { SettingsPage } from './pages/Settings';
 import { LoginPage } from './pages/Login';
+import { TranslationProvider } from './lib/i18n';
 
 // Page placeholders for now
 const ComingSoon = ({ title }: { title: string }) => (
@@ -88,20 +89,22 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <LayoutShell user={session.user}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/ingresos" element={<IncomePage />} />
-          <Route path="/egresos" element={<ExpensesPage />} />
-          <Route path="/presupuesto" element={<BudgetPage />} />
-          <Route path="/creditos" element={<CreditsPage />} />
-          <Route path="/cuentas-fijas" element={<FixedAccountsPage />} />
-          <Route path="/reportes" element={<ReportsPage />} />
-          <Route path="/vista-hogar" element={<HouseholdPage />} />
-          <Route path="/configuracion" element={<SettingsPage />} />
-        </Routes>
-      </LayoutShell>
-    </Router>
+    <TranslationProvider>
+      <Router>
+        <LayoutShell user={session.user}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/ingresos" element={<IncomePage />} />
+            <Route path="/egresos" element={<ExpensesPage />} />
+            <Route path="/presupuesto" element={<BudgetPage />} />
+            <Route path="/creditos" element={<CreditsPage />} />
+            <Route path="/cuentas-fijas" element={<FixedAccountsPage />} />
+            <Route path="/reportes" element={<ReportsPage />} />
+            <Route path="/vista-hogar" element={<HouseholdPage />} />
+            <Route path="/configuracion" element={<SettingsPage />} />
+          </Routes>
+        </LayoutShell>
+      </Router>
+    </TranslationProvider>
   );
 }

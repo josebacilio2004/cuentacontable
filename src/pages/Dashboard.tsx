@@ -27,8 +27,10 @@ import {
 import { supabase } from '../lib/supabase';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTranslation } from '../lib/i18n';
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalIncome: 0,
@@ -132,7 +134,7 @@ export function Dashboard() {
           <div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Balance del Mes</p>
             <h2 className={cn("text-5xl font-extrabold tracking-tight mb-4", stats.availableBalance >= 0 ? "text-emerald-400" : "text-rose-400")}>
-              ${stats.availableBalance.toLocaleString()}
+              {t('currency')}{stats.availableBalance.toLocaleString()}
             </h2>
             <div className="flex items-center gap-4 text-sm text-slate-300">
               <span className="flex items-center gap-1 text-indigo-400 font-bold">
@@ -159,10 +161,10 @@ export function Dashboard() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-        <KPI label="Ingresos" value={`$${stats.totalIncome.toLocaleString()}`} icon={HandCoins} colorClass="border-l-emerald-400" trend="Este mes" />
-        <KPI label="Egresos" value={`$${stats.totalExpense.toLocaleString()}`} icon={ShoppingBag} colorClass="border-l-rose-400" trend="Este mes" />
-        <KPI label="Deuda Total" value={`$${stats.totalDebt.toLocaleString()}`} icon={Landmark} colorClass="border-l-violet-400" trend="Créditos" />
-        <KPI label="Saldo Libre" value={`$${stats.availableBalance.toLocaleString()}`} icon={Wallet} colorClass="border-l-indigo-400" trend="Neto" />
+        <KPI label="Ingresos" value={`${t('currency')}${stats.totalIncome.toLocaleString()}`} icon={HandCoins} colorClass="border-l-emerald-400" trend="Este mes" />
+        <KPI label="Egresos" value={`${t('currency')}${stats.totalExpense.toLocaleString()}`} icon={ShoppingBag} colorClass="border-l-rose-400" trend="Este mes" />
+        <KPI label="Deuda Total" value={`${t('currency')}${stats.totalDebt.toLocaleString()}`} icon={Landmark} colorClass="border-l-violet-400" trend="Créditos" />
+        <KPI label="Saldo Libre" value={`${t('currency')}${stats.availableBalance.toLocaleString()}`} icon={Wallet} colorClass="border-l-indigo-400" trend="Neto" />
       </div>
 
       {/* Charts Row */}
@@ -196,7 +198,7 @@ export function Dashboard() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Gastos</span>
-              <span className="text-xl font-bold text-white">${(stats.totalExpense/1000).toFixed(1)}k</span>
+              <span className="text-xl font-bold text-white">{t('currency')}{(stats.totalExpense/1000).toFixed(1)}k</span>
             </div>
           </div>
           <div className="space-y-3">
