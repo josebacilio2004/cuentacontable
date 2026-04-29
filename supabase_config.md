@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS savings_goals (
   target_amount DECIMAL(12,2) NOT NULL,
   current_amount DECIMAL(12,2) DEFAULT 0,
   deadline DATE,
+  target_time TIME DEFAULT '23:59:59',
+  status TEXT DEFAULT 'pendiente', -- pendiente, cumplido, fallido
   color TEXT DEFAULT '#6366f1',
   icon TEXT DEFAULT 'Target',
   created_at TIMESTAMPTZ DEFAULT NOW()

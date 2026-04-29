@@ -56,43 +56,56 @@ export function TopNav({ user }: TopNavProps) {
 
   const fetchData = async () => {
     // Calcular Saldo
-    const { data: txs } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .eq('user_id', user.id);
+    const { data: incomeData } = await supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'income');
+    const { data: expenseData } = await supabase.from('transactions').select('amount').eq('user_id', user.id).eq('type', 'expense');
+    const totalIn = incomeData?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+    const totalOut = expenseData?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+    setBalance(totalIn - totalOut);
 
-    if (txs) {
-      const income = txs.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
-      const expense = txs.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
-      setBalance(income - expense);
-    }
+    // Notifications for Credits
+    const { data: credits } = await supabase.from('credits').select('*').eq('user_id', user.id);
+    const creditNotifs = (credits || [])
+      .filter(c => {
+        if (!c.due_date) return false;
+        const diff = Math.ceil((new Date(c.due_date + 'T12:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 5;
+      })
+      .map(c => ({
+        id: `credit-${c.id}`,
+        title: 'Vencimiento Próximo',
+        message: `Tu crédito en ${c.bank_name} vence en ${Math.ceil((new Date(c.due_date + 'T12:00:00').getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} días.`,
+        time: 'Urgente',
+        type: 'warning',
+        unread: true
+      }));
 
-    // Detectar Créditos Próximos
-    const { data: credits } = await supabase
-      .from('credits')
+    // Notifications for Daily Goals
+    const today = new Date().toISOString().split('T')[0];
+    const { data: goals } = await supabase
+      .from('savings_goals')
       .select('*')
       .eq('user_id', user.id)
-      .gt('remaining_balance', 0);
+      .eq('deadline', today)
+      .eq('status', 'pendiente');
 
-    if (credits) {
-      const newNotifs = credits
-        .filter(c => {
-          if (!c.due_date) return false;
-          const due = new Date(c.due_date);
-          const today = new Date();
-          const diff = (due.getTime() - today.getTime()) / (1000 * 3600 * 24);
-          return diff <= 5 && diff >= 0;
-        })
-        .map(c => ({
-          id: c.id,
-          title: 'Vencimiento Próximo',
-          message: `Tu pago de ${c.bank_name} vence pronto (S/ ${c.monthly_payment})`,
-          time: 'Ahora',
-          type: 'warning',
-          unread: true
-        }));
-      setNotifications(newNotifs);
-    }
+    const goalNotifs = (goals || [])
+      .filter(g => {
+        const now = new Date();
+        const [h, m] = g.target_time.split(':');
+        const target = new Date();
+        target.setHours(parseInt(h), parseInt(m), 0);
+        return now >= target; // Notificar si ya pasó la hora
+      })
+      .map(g => ({
+        id: `goal-${g.id}`,
+        title: 'Meta Diaria Vencida',
+        message: `Es hora de cumplir tu meta: ${g.name} (S/ ${g.target_amount})`,
+        time: g.target_time.slice(0, 5),
+        type: 'info',
+        unread: true
+      }));
+
+    setNotifications([...creditNotifs, ...goalNotifs]);
   };
 
   const handleLogout = async () => {

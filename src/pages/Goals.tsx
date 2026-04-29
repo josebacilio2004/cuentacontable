@@ -28,7 +28,8 @@ export function GoalsPage() {
   // Form State
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [deadline, setDeadline] = useState(new Date().toISOString().split('T')[0]);
+  const [targetTime, setTargetTime] = useState('23:00');
   const [icon, setIcon] = useState('Target');
   const [color, setColor] = useState('#6366f1');
 
@@ -62,6 +63,7 @@ export function GoalsPage() {
       name,
       target_amount: parseFloat(targetAmount),
       deadline,
+      target_time: targetTime,
       icon,
       color
     });
@@ -70,8 +72,32 @@ export function GoalsPage() {
       setShowForm(false);
       setName('');
       setTargetAmount('');
-      setDeadline('');
       fetchGoals(user.id);
+    }
+    setSaving(false);
+  };
+
+  const handleComplete = async (goal: any) => {
+    setSaving(true);
+    
+    // 1. Marcar como cumplido
+    const { error: goalError } = await supabase
+      .from('savings_goals')
+      .update({ status: 'cumplido', current_amount: goal.target_amount })
+      .eq('id', goal.id);
+
+    if (!goalError) {
+      // 2. Registrar como Ingreso
+      await supabase.from('transactions').insert({
+        user_id: user.id,
+        amount: goal.target_amount,
+        type: 'income',
+        category: 'Ahorro Cumplido',
+        description: `Meta alcanzada: ${goal.name}`,
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      if (user) fetchGoals(user.id);
     }
     setSaving(false);
   };
@@ -140,6 +166,15 @@ export function GoalsPage() {
                   className="w-full bg-[#0f172a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" 
                 />
               </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hora Objetivo</label>
+                <input 
+                  type="time" 
+                  value={targetTime} 
+                  onChange={e => setTargetTime(e.target.value)} 
+                  className="w-full bg-[#0f172a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" 
+                />
+              </div>
               <div className="flex items-end">
                 <button 
                   onClick={handleSave}
@@ -165,41 +200,59 @@ export function GoalsPage() {
           </div>
         ) : (
           goals.map(goal => {
-            const progress = Math.min(Math.round((goal.current_amount / goal.target_amount) * 100), 100);
+            const isCompleted = goal.status === 'cumplido';
+            const progress = isCompleted ? 100 : Math.min(Math.round((goal.current_amount / goal.target_amount) * 100), 100);
             const weekly = calculateWeeklySaving(goal);
             
             return (
-              <Card key={goal.id} className="p-0 overflow-hidden group hover:border-indigo-500/30 transition-all border-white/5">
+              <Card key={goal.id} className={cn(
+                "p-0 overflow-hidden group hover:border-indigo-500/30 transition-all border-white/5",
+                isCompleted && "bg-emerald-500/5 border-emerald-500/20"
+              )}>
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-6">
                     <div className={cn(
                       "w-12 h-12 rounded-2xl flex items-center justify-center border",
-                      "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+                      isCompleted ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
                     )}>
-                      <Target size={24} />
+                      {isCompleted ? <Star size={24} /> : <Target size={24} />}
                     </div>
-                    <button 
-                      onClick={() => handleDelete(goal.id)}
-                      className="text-slate-600 hover:text-rose-400 p-2 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <X size={16} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                       {isCompleted && (
+                         <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-500 text-white px-2 py-1 rounded-md">Completada</span>
+                       )}
+                       <button 
+                         onClick={() => handleDelete(goal.id)}
+                         className="text-slate-600 hover:text-rose-400 p-2 opacity-0 group-hover:opacity-100 transition-all"
+                       >
+                         <X size={16} />
+                       </button>
+                    </div>
                   </div>
 
                   <h3 className="text-xl font-bold text-white mb-1">{goal.name}</h3>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">
-                    <Calendar size={12} />
-                    <span>Meta: {goal.deadline ? format(new Date(goal.deadline + 'T12:00:00'), 'dd MMM yyyy', { locale: es }) : 'Sin fecha'}</span>
+                  <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      <span>{goal.deadline ? format(new Date(goal.deadline + 'T12:00:00'), 'dd MMM', { locale: es }) : 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-indigo-400">
+                      <Zap size={12} />
+                      <span>{goal.target_time?.slice(0, 5) || '23:59'}</span>
+                    </div>
                   </div>
 
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400 font-medium">Progreso</span>
-                      <span className="text-white font-bold">{progress}%</span>
+                      <span className={cn("font-bold", isCompleted ? "text-emerald-400" : "text-white")}>{progress}%</span>
                     </div>
                     <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                        className={cn(
+                          "h-full rounded-full transition-all duration-1000",
+                          isCompleted ? "bg-emerald-500" : "bg-indigo-500"
+                        )}
                         style={{ width: `${progress}%` }}
                       ></div>
                     </div>
@@ -208,21 +261,21 @@ export function GoalsPage() {
                       <span className="text-indigo-400">Objetivo: S/ {goal.target_amount.toLocaleString()}</span>
                     </div>
                   </div>
-
-                  {weekly && (
-                    <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-between">
-                       <div>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter mb-0.5">Ahorro Semanal Necesario</p>
-                          <p className="text-sm font-bold text-indigo-400">S/ {weekly.toFixed(2)}</p>
-                       </div>
-                       <Zap size={20} className="text-amber-400 animate-pulse" />
-                    </div>
-                  )}
                 </div>
 
-                <button className="w-full py-4 bg-white/5 border-t border-white/5 text-xs font-bold text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2">
-                   Añadir Ahorro <ChevronRight size={14} />
-                </button>
+                {!isCompleted ? (
+                  <button 
+                    onClick={() => handleComplete(goal)}
+                    disabled={saving}
+                    className="w-full py-4 bg-indigo-500 text-white text-xs font-bold hover:bg-indigo-400 transition-all flex items-center justify-center gap-2"
+                  >
+                    {saving ? <Loader2 className="animate-spin" /> : <>Cumplir Meta <ChevronRight size={14} /></>}
+                  </button>
+                ) : (
+                  <div className="w-full py-4 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                     <ShieldCheck size={14} /> Dinero Agregado al Saldo
+                  </div>
+                )}
               </Card>
             );
           })
