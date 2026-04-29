@@ -30,7 +30,7 @@ workflows:
 
   android-workflow:
     name: Android Workflow
-    instance_type: linux
+    instance_type: mac_mini_m1
     max_build_duration: 30
     working_directory: mobile_app
     environment:
