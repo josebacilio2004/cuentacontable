@@ -46,8 +46,10 @@ class _CreditModalState extends State<CreditModal> {
         'total_amount': totalToReturn,
         'remaining_balance': remaining,
         'monthly_payment': mPayment,
-        'installments': instTotal,
-        'paid_installments': instPaid,
+        'installments_total': instTotal, // Nuevo (Web)
+        'installments': instTotal,       // Antiguo (Móvil)
+        'installments_paid': instPaid,   // Nuevo (Web)
+        'paid_installments': instPaid,   // Antiguo (Móvil)
         'due_date': _nextDueController.text,
         'interest_rate': tea,
         'status': instPaid >= instTotal ? 'completado' : 'activo',

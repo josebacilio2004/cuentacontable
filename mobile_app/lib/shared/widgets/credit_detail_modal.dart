@@ -32,8 +32,10 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
     setState(() => _isLoading = true);
     try {
       final totalAmount = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
-      final totalInstallments = int.tryParse(widget.credit['installments']?.toString() ?? '1') ?? 1;
-      final paidSoFar = int.tryParse(widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
+      
+      // SOPORTE PARA AMBOS NOMBRES DE COLUMNA
+      final totalInstallments = int.tryParse(widget.credit['installments_total']?.toString() ?? widget.credit['installments']?.toString() ?? '1') ?? 1;
+      final paidSoFar = int.tryParse(widget.credit['installments_paid']?.toString() ?? widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
       
       if (paidSoFar >= totalInstallments) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Este crédito ya está totalmente pagado.')));
@@ -68,13 +70,14 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
         'date': DateTime.now().toIso8601String().split('T')[0],
       });
 
-      // 2. Actualizar Crédito
+      // 2. Actualizar Crédito (ACTUALIZAMOS AMBAS PARA MANTENER SINCRONÍA)
       final newPaid = paidSoFar + 1;
       final currentRemaining = double.tryParse(widget.credit['remaining_balance']?.toString() ?? '0') ?? 0.0;
       final newRemaining = currentRemaining - installmentValue;
       
       await SupabaseConfig.client.from('credits').update({
-        'paid_installments': newPaid,
+        'installments_paid': newPaid,
+        'paid_installments': newPaid, // Retrocompatibilidad
         'remaining_balance': newRemaining,
         'status': newPaid >= totalInstallments ? 'completado' : 'activo',
       }).eq('id', widget.credit['id']);
@@ -91,8 +94,11 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
   Widget build(BuildContext context) {
     final total = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
     final remaining = double.tryParse(widget.credit['remaining_balance']?.toString() ?? '0') ?? 0.0;
-    final totalInstallments = int.tryParse(widget.credit['installments']?.toString() ?? '1') ?? 1;
-    final paid = int.tryParse(widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
+    
+    // SOPORTE PARA AMBOS NOMBRES EN UI
+    final totalInstallments = int.tryParse(widget.credit['installments_total']?.toString() ?? widget.credit['installments']?.toString() ?? '1') ?? 1;
+    final paid = int.tryParse(widget.credit['installments_paid']?.toString() ?? widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
+    
     final installmentValue = total / totalInstallments;
 
     return Container(

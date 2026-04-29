@@ -75,8 +75,14 @@ class CreditsScreen extends StatelessWidget {
     double total = double.tryParse(loan['total_amount']?.toString() ?? '0') ?? 0.0;
     double remaining = double.tryParse(loan['remaining_balance']?.toString() ?? '0') ?? 0.0;
     double progress = total > 0 ? (total - remaining) / total : 0;
-    int totalInstallments = int.tryParse(loan['installments']?.toString() ?? '0') ?? 0;
-    int paid = int.tryParse(loan['paid_installments']?.toString() ?? '0') ?? 0;
+    
+    // NOMBRES UNIFICADOS CON LA WEB
+    int totalInstallments = int.tryParse(loan['installments_total']?.toString() ?? '0') ?? 0;
+    if (totalInstallments == 0) totalInstallments = int.tryParse(loan['installments']?.toString() ?? '0') ?? 0;
+    
+    int paid = int.tryParse(loan['installments_paid']?.toString() ?? '0') ?? 0;
+    if (paid == 0) paid = int.tryParse(loan['paid_installments']?.toString() ?? '0') ?? 0;
+    
     String bank = loan['bank_name']?.toString() ?? 'Banco Desconocido';
 
     if (progress < 0) progress = 0;
