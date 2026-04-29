@@ -128,41 +128,62 @@ export function CreditsPage() {
 
     const amount = parseFloat(paymentAmount);
 
-    // 1. Registrar Egreso
-    const { error: txError } = await supabase.from('transactions').insert({
-      user_id: user.id,
-      amount: amount,
-      type: 'expense',
-      category: 'Créditos',
-      description: `Abono a crédito ${selectedCredit.bank_name}`,
-      date: paymentDate.split('T')[0],
-      created_at: new Date(paymentDate).toISOString(),
-      credit_id: selectedCredit.id
-    });
+    try {
+      // 1. VALIDACIÓN DE SALDO EN TIEMPO REAL
+      const { data: transactions } = await supabase.from('transactions').select('amount, type').eq('user_id', user.id);
+      const currentBalance = (transactions || []).reduce((acc, tx) => {
+        return tx.type === 'income' ? acc + Number(tx.amount) : acc - Number(tx.amount);
+      }, 0);
 
-    if (txError) {
-      alert("Error al registrar el abono.");
-      setIsPaying(false);
-      return;
-    }
+      if (currentBalance < amount) {
+        alert(`Saldo insuficiente. Tu saldo actual es S/ ${currentBalance.toLocaleString()}. Necesitas S/ ${amount.toLocaleString()} para este abono.`);
+        setIsPaying(false);
+        return;
+      }
 
-    // 2. Actualizar Crédito
-    const newRemaining = selectedCredit.remaining_balance - amount;
-    const { error: creditError } = await supabase
-      .from('credits')
-      .update({
-        remaining_balance: newRemaining,
-        installments_paid: selectedCredit.installments_paid + 1
-      })
-      .eq('id', selectedCredit.id);
+      // 2. Registrar Egreso
+      const { error: txError } = await supabase.from('transactions').insert({
+        user_id: user.id,
+        amount: amount,
+        type: 'expense',
+        category: 'Créditos',
+        description: `Abono a crédito ${selectedCredit.bank_name} (Cuota ${selectedCredit.installments_paid + 1})`,
+        date: paymentDate.split('T')[0],
+        created_at: new Date(paymentDate).toISOString(),
+        credit_id: selectedCredit.id
+      });
 
-    if (!creditError) {
+      if (txError) throw txError;
+
+      // 3. Calcular Nueva Fecha de Vencimiento (+1 mes)
+      let nextDate = null;
+      if (selectedCredit.due_date) {
+        const date = new Date(selectedCredit.due_date + 'T12:00:00');
+        date.setMonth(date.getMonth() + 1);
+        nextDate = date.toISOString().split('T')[0];
+      }
+
+      // 4. Actualizar Crédito
+      const newRemaining = selectedCredit.remaining_balance - amount;
+      const { error: creditError } = await supabase
+        .from('credits')
+        .update({
+          remaining_balance: newRemaining,
+          installments_paid: (selectedCredit.installments_paid || 0) + 1,
+          due_date: nextDate // Actualización automática de fecha
+        })
+        .eq('id', selectedCredit.id);
+
+      if (creditError) throw creditError;
+
       setSelectedCredit(null);
       setPaymentAmount('');
       fetchCredits(user.id);
+    } catch (e: any) {
+      alert("Error al procesar el abono: " + e.message);
+    } finally {
+      setIsPaying(false);
     }
-
-    setIsPaying(false);
   };
 
   const resetForm = () => {
@@ -329,17 +350,19 @@ export function CreditsPage() {
                           <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-indigo-500/10 transition-colors">
                             <Zap size={24} className="text-indigo-400" />
                           </div>
-                          <div>
-                            <h4 className="font-bold text-white text-lg">{loan.bank_name}</h4>
-                            <p className="text-xs text-slate-500 font-medium">Frecuencia: <span className="capitalize">{loan.payment_frequency}</span></p>
-                          </div>
+                      <div>
+                        <h4 className="font-bold text-white text-lg">{loan.bank_name}</h4>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Letra {loan.installments_paid || 0} de {loan.installments_total} • {loan.payment_frequency}
+                        </p>
                       </div>
-                      
-                      <div className="flex-1 max-w-md hidden sm:block">
-                          <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-                            <span>Progreso (S/ {loan.remaining_balance?.toLocaleString()} pendiente)</span>
-                            <span>{progress}%</span>
-                          </div>
+                  </div>
+                  
+                  <div className="flex-1 max-w-md hidden sm:block">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                        <span>Progreso (S/ {Number(loan.remaining_balance).toLocaleString()} pendiente)</span>
+                        <span>{progress}%</span>
+                      </div>
                           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
