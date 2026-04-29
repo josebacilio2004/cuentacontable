@@ -33,9 +33,14 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
     try {
       final totalAmount = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
       
-      // SOPORTE PARA AMBOS NOMBRES DE COLUMNA
-      final totalInstallments = int.tryParse(widget.credit['installments_total']?.toString() ?? widget.credit['installments']?.toString() ?? '1') ?? 1;
-      final paidSoFar = int.tryParse(widget.credit['installments_paid']?.toString() ?? widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
+      // BÚSQUEDA MULTI-CANAL PARA SINCRONIZACIÓN TOTAL
+      final totalInstallments = int.tryParse(
+        (widget.credit['installments_total'] ?? widget.credit['installmentsTotal'] ?? widget.credit['installments'] ?? '24').toString()
+      ) ?? 24;
+      
+      final paidSoFar = int.tryParse(
+        (widget.credit['installments_paid'] ?? widget.credit['installmentsPaid'] ?? widget.credit['paid_installments'] ?? '0').toString()
+      ) ?? 0;
       
       if (paidSoFar >= totalInstallments) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Este crédito ya está totalmente pagado.')));
@@ -95,11 +100,16 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
     final total = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
     final remaining = double.tryParse(widget.credit['remaining_balance']?.toString() ?? '0') ?? 0.0;
     
-    // SOPORTE PARA AMBOS NOMBRES EN UI
-    final totalInstallments = int.tryParse(widget.credit['installments_total']?.toString() ?? widget.credit['installments']?.toString() ?? '1') ?? 1;
-    final paid = int.tryParse(widget.credit['installments_paid']?.toString() ?? widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
+    // BÚSQUEDA MULTI-CANAL EN UI
+    final totalInstallments = int.tryParse(
+      (widget.credit['installments_total'] ?? widget.credit['installmentsTotal'] ?? widget.credit['installments'] ?? '24').toString()
+    ) ?? 24;
     
-    final installmentValue = total / totalInstallments;
+    final paid = int.tryParse(
+      (widget.credit['installments_paid'] ?? widget.credit['installmentsPaid'] ?? widget.credit['paid_installments'] ?? '0').toString()
+    ) ?? 0;
+    
+    final installmentValue = totalInstallments > 0 ? total / totalInstallments : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(24),
