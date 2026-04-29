@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cuentacontable_mobile/core/config/supabase_config.dart';
 import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:cuentacontable_mobile/shared/widgets/credit_detail_modal.dart';
 import 'package:cuentacontable_mobile/shared/widgets/credit_modal.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -22,6 +23,15 @@ class CreditsScreen extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const CreditModal(),
+    );
+  }
+
+  void _showDetailModal(BuildContext context, Map<String, dynamic> credit) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CreditDetailModal(credit: credit),
     );
   }
 
@@ -49,7 +59,10 @@ class CreditsScreen extends StatelessWidget {
             itemCount: credits.length,
             itemBuilder: (context, index) {
               final loan = credits[index];
-              return _creditCard(loan);
+              return InkWell(
+                onTap: () => _showDetailModal(context, loan),
+                child: _creditCard(loan),
+              );
             },
           );
         },
@@ -61,6 +74,8 @@ class CreditsScreen extends StatelessWidget {
     double total = double.parse(loan['total_amount'].toString());
     double remaining = double.parse(loan['remaining_balance'].toString());
     double progress = total > 0 ? (total - remaining) / total : 0;
+    int totalInstallments = int.parse(loan['installments'].toString());
+    int paid = int.parse(loan['paid_installments']?.toString() ?? '0');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -72,7 +87,13 @@ class CreditsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(loan['bank_name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(loan['bank_name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text('Letra $paid de $totalInstallments', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                  ],
+                ),
                 const Icon(LucideIcons.zap, color: Colors.amberAccent, size: 20),
               ],
             ),

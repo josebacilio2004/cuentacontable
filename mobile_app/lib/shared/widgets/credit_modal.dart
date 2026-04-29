@@ -18,19 +18,27 @@ class _CreditModalState extends State<CreditModal> {
   bool _isLoading = false;
 
   Future<void> _save() async {
-    if (_amountController.text.isEmpty) return;
+    if (_amountController.text.isEmpty || _rateController.text.isEmpty || _installmentsController.text.isEmpty) return;
     setState(() => _isLoading = true);
     try {
       final userId = SupabaseConfig.client.auth.currentUser!.id;
-      final amount = double.parse(_amountController.text);
+      final principal = double.parse(_amountController.text);
+      final rate = double.parse(_rateController.text);
+      final installments = int.parse(_installmentsController.text);
+      
+      // Cálculo automático: Capital + Interés total
+      final totalToReturn = principal + (principal * (rate / 100));
+      
       await SupabaseConfig.client.from('credits').insert({
         'user_id': userId,
         'bank_name': _bankController.text,
-        'total_amount': amount,
-        'remaining_balance': amount,
-        'interest_rate': double.parse(_rateController.text),
-        'installments': int.parse(_installmentsController.text),
+        'total_amount': totalToReturn,
+        'remaining_balance': totalToReturn,
+        'interest_rate': rate,
+        'installments': installments,
+        'paid_installments': 0, // Iniciamos en 0 letras pagadas
         'status': 'activo',
+        'created_at': DateTime.now().toIso8601String(),
       });
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -52,17 +60,19 @@ class _CreditModalState extends State<CreditModal> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Nuevo Crédito', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('Nuevo Crédito', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          const Text('Se calculará el total con intereses automáticamente.', style: TextStyle(color: Colors.white54, fontSize: 12)),
           const SizedBox(height: 24),
           _input('Nombre del Banco', _bankController, LucideIcons.building, TextInputType.text),
           const SizedBox(height: 16),
-          _input('Monto Total (S/)', _amountController, LucideIcons.dollarSign, TextInputType.number),
+          _input('Monto Prestado (S/)', _amountController, LucideIcons.dollarSign, TextInputType.number),
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _input('Tasa (%)', _rateController, LucideIcons.percent, TextInputType.number)),
+              Expanded(child: _input('Tasa Total (%)', _rateController, LucideIcons.percent, TextInputType.number)),
               const SizedBox(width: 16),
-              Expanded(child: _input('Cuotas', _installmentsController, LucideIcons.list, TextInputType.number)),
+              Expanded(child: _input('Cant. de Letras', _installmentsController, LucideIcons.list, TextInputType.number)),
             ],
           ),
           const SizedBox(height: 32),
@@ -91,6 +101,7 @@ class _CreditModalState extends State<CreditModal> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Colors.white54),
         prefixIcon: Icon(icon, color: Colors.white24),
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
