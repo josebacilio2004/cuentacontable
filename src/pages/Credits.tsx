@@ -377,7 +377,6 @@ export function CreditsPage() {
            </Card>
         </section>
       </div>
-      </div>
 
       {/* Abono Modal */}
       {selectedCredit && (
