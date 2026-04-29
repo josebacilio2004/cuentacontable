@@ -8,12 +8,22 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
-      - name: Install dependencies
+      - name: Install CocoaPods
         script: |
-          flutter packages pub get
-      - name: Flutter build IPA
+          cd ios && pod install
+      - name: Build iOS Release
         script: |
-          flutter build ipa --release --no-codesign
+          # Compilamos para iOS en modo release sin firma
+          flutter build ios --release --no-codesign
+      - name: Create IPA for Sideloadly
+        script: |
+          # Empaquetamos manualmente el .app en un .ipa
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r cuentacontable.ipa Payload
+          # Movemos el resultado a una carpeta que CodeMagic reconozca como artefacto
+          mkdir -p build/ios/ipa
+          mv cuentacontable.ipa build/ios/ipa/
     artifacts:
       - build/ios/ipa/*.ipa
 
