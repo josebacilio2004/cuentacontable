@@ -5,7 +5,7 @@ Para que el sistema funcione correctamente con datos reales, debes ejecutar este
 ## 1. Creación de Tablas y RLS
 
 ```sql
--- Tabla de Transacciones (Ingresos y Egresos)
+-- Tabla de Transacciones (Actualizada con precisión horaria)
 CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -13,10 +13,32 @@ CREATE TABLE IF NOT EXISTS transactions (
   type TEXT CHECK (type IN ('income', 'expense')),
   category TEXT NOT NULL,
   description TEXT,
-  date DATE DEFAULT CURRENT_DATE,
-  is_shared BOOLEAN DEFAULT FALSE,
+  date DATE DEFAULT CURRENT_DATE, -- Mantenemos date para compatibilidad
+  created_at TIMESTAMPTZ DEFAULT NOW(), -- Este captura la hora exacta automáticamente
+  credit_id UUID REFERENCES credits(id) ON DELETE SET NULL, -- Para saber a qué crédito pertenece el abono
+  is_shared BOOLEAN DEFAULT FALSE
+);
+
+-- Tabla de Metas de Ahorro (Nueva)
+CREATE TABLE IF NOT EXISTS savings_goals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  target_amount DECIMAL(12,2) NOT NULL,
+  current_amount DECIMAL(12,2) DEFAULT 0,
+  deadline DATE,
+  color TEXT DEFAULT '#6366f1',
+  icon TEXT DEFAULT 'Target',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Políticas RLS para Metas
+ALTER TABLE savings_goals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own goals" ON savings_goals FOR ALL USING (auth.uid() = user_id);
+
+-- Función para obtener la hora de Perú
+-- Nota: Supabase usa UTC internamente, pero podemos formatear en el cliente
+-- o usar AT TIME ZONE 'America/Lima' en queries.
 
 -- Tabla de Créditos (Actualizada)
 CREATE TABLE IF NOT EXISTS credits (

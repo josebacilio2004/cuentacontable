@@ -10,7 +10,9 @@ import {
   Wallet, 
   Settings,
   Users,
-  MessageSquareCode
+  MessageSquareCode,
+  Target,
+  Zap
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTranslation } from '../lib/i18n';
@@ -26,6 +28,8 @@ export function Sidebar() {
     { icon: Repeat, label: t('nav.fixed'), to: '/cuentas-fijas' },
     { icon: BarChart3, label: t('nav.reports'), to: '/reportes' },
     { icon: Wallet, label: t('nav.budget'), to: '/presupuesto' },
+    { icon: Target, label: 'Metas', to: '/metas' },
+    { icon: Zap, label: 'Planificación', to: '/planificacion' },
     { icon: Users, label: t('nav.household'), to: '/vista-hogar' },
     { icon: Settings, label: t('nav.settings'), to: '/configuracion' },
   ];

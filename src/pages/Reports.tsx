@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -35,10 +37,68 @@ export function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[]>([]);
   const [distribution, setDistribution] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     fetchReportData();
   }, []);
+
+  const exportToPDF = async () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(79, 70, 229); // Indigo 600
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('CUENTACONTABLE', 20, 20);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('REPORTE FINANCIERO PROFESIONAL', 20, 30);
+    doc.text(format(new Date(), 'dd/MM/yyyy HH:mm', { locale: es }), 160, 20);
+
+    // Summary Section
+    const totalIn = transactions.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
+    const totalOut = transactions.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
+    
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text('Resumen de Periodo', 20, 55);
+    
+    autoTable(doc, {
+      startY: 60,
+      head: [['Concepto', 'Monto (S/)']],
+      body: [
+        ['Total Ingresos', `S/ ${totalIn.toLocaleString()}`],
+        ['Total Egresos', `S/ ${totalOut.toLocaleString()}`],
+        ['Saldo Neto', `S/ ${(totalIn - totalOut).toLocaleString()}`],
+      ],
+      theme: 'striped',
+      headStyles: { fillStyle: [79, 70, 229] }
+    });
+
+    // Transactions Table
+    doc.text('Detalle de Movimientos', 20, (doc as any).lastAutoTable.finalY + 20);
+    
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 25,
+      head: [['Fecha', 'Categoría', 'Descripción', 'Tipo', 'Monto']],
+      body: transactions.map(t => [
+        t.date,
+        t.category,
+        t.description || '-',
+        t.type === 'income' ? 'Ingreso' : 'Egreso',
+        `S/ ${Number(t.amount).toLocaleString()}`
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillStyle: [79, 70, 229] }
+    });
+
+    doc.save(`Reporte_CuentaContable_${format(new Date(), 'yyyyMMdd')}.pdf`);
+  };
 
   const fetchReportData = async () => {
     setLoading(true);
@@ -76,8 +136,8 @@ export function ReportsPage() {
       setDistribution(Object.keys(cats).map(name => ({
         name,
         value: cats[name],
-        color: name === 'Alimentación' ? '#4edea3' : name === 'Transporte' ? '#c0c1ff' : '#d0bcff'
       })));
+      setTransactions(transactions);
     }
     setLoading(false);
   };
@@ -109,11 +169,11 @@ export function ReportsPage() {
             Filtrar
           </button>
           <button 
-            onClick={handleExport}
+            onClick={exportToPDF}
             className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20"
           >
             <Download size={18} />
-            Exportar CSV
+            Exportar para Banco (PDF)
           </button>
         </div>
       </div>

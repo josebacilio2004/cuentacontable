@@ -13,6 +13,8 @@ import { CreditsPage } from './pages/Credits';
 import { FixedAccountsPage } from './pages/FixedAccounts';
 import { ReportsPage } from './pages/Reports';
 import { HouseholdPage } from './pages/Household';
+import { GoalsPage } from './pages/Goals';
+import { PlanningPage } from './pages/Planning';
 import { SettingsPage } from './pages/Settings';
 import { LoginPage } from './pages/Login';
 import { TranslationProvider } from './lib/i18n';
@@ -96,6 +98,8 @@ export default function App() {
               <Route path="/cuentas-fijas" element={<FixedAccountsPage />} />
               <Route path="/reportes" element={<ReportsPage />} />
               <Route path="/vista-hogar" element={<HouseholdPage />} />
+              <Route path="/metas" element={<GoalsPage />} />
+              <Route path="/planificacion" element={<PlanningPage />} />
               <Route path="/configuracion" element={<SettingsPage />} />
             </Routes>
           </LayoutShell>

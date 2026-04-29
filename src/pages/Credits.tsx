@@ -45,6 +45,7 @@ export function CreditsPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [isPaying, setIsPaying] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 16));
 
   // Helper to calculate total to return
   useEffect(() => {
@@ -125,7 +126,9 @@ export function CreditsPage() {
       type: 'expense',
       category: 'Créditos',
       description: `Abono a crédito ${selectedCredit.bank_name}`,
-      date: format(new Date(), 'yyyy-MM-dd')
+      date: paymentDate.split('T')[0],
+      created_at: new Date(paymentDate).toISOString(),
+      credit_id: selectedCredit.id
     });
 
     if (txError) {
@@ -412,6 +415,16 @@ export function CreditsPage() {
                     className="w-full bg-transparent border-none text-4xl font-bold text-white focus:ring-0 p-0 placeholder-white/10"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Fecha y Hora del Pago</label>
+                <input 
+                  type="datetime-local" 
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
+                />
               </div>
 
               <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
