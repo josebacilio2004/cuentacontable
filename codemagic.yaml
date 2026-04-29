@@ -8,20 +8,21 @@ workflows:
       flutter: stable
       xcode: latest
     scripts:
+      - name: Initialize iOS project
+        script: |
+          # Forzamos la creación del Podfile y archivos de iOS si no existen
+          flutter create . --platforms=ios
       - name: Install CocoaPods
         script: |
           cd ios && pod install
       - name: Build iOS Release
         script: |
-          # Compilamos para iOS en modo release sin firma
           flutter build ios --release --no-codesign
       - name: Create IPA for Sideloadly
         script: |
-          # Empaquetamos manualmente el .app en un .ipa
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
           zip -r cuentacontable.ipa Payload
-          # Movemos el resultado a una carpeta que CodeMagic reconozca como artefacto
           mkdir -p build/ios/ipa
           mv cuentacontable.ipa build/ios/ipa/
     artifacts:
