@@ -31,9 +31,9 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
   Future<void> _payInstallment() async {
     setState(() => _isLoading = true);
     try {
-      final totalAmount = double.parse(widget.credit['total_amount'].toString());
-      final totalInstallments = int.parse(widget.credit['installments'].toString());
-      final paidSoFar = int.parse(widget.credit['paid_installments']?.toString() ?? '0');
+      final totalAmount = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
+      final totalInstallments = int.tryParse(widget.credit['installments']?.toString() ?? '1') ?? 1;
+      final paidSoFar = int.tryParse(widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
       
       if (paidSoFar >= totalInstallments) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Este crédito ya está totalmente pagado.')));
@@ -70,7 +70,8 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
 
       // 2. Actualizar Crédito
       final newPaid = paidSoFar + 1;
-      final newRemaining = double.parse(widget.credit['remaining_balance'].toString()) - installmentValue;
+      final currentRemaining = double.tryParse(widget.credit['remaining_balance']?.toString() ?? '0') ?? 0.0;
+      final newRemaining = currentRemaining - installmentValue;
       
       await SupabaseConfig.client.from('credits').update({
         'paid_installments': newPaid,
@@ -88,10 +89,10 @@ class _CreditDetailModalState extends State<CreditDetailModal> {
 
   @override
   Widget build(BuildContext context) {
-    final total = double.parse(widget.credit['total_amount'].toString());
-    final remaining = double.parse(widget.credit['remaining_balance'].toString());
-    final totalInstallments = int.parse(widget.credit['installments'].toString());
-    final paid = int.parse(widget.credit['paid_installments']?.toString() ?? '0');
+    final total = double.tryParse(widget.credit['total_amount']?.toString() ?? '0') ?? 0.0;
+    final remaining = double.tryParse(widget.credit['remaining_balance']?.toString() ?? '0') ?? 0.0;
+    final totalInstallments = int.tryParse(widget.credit['installments']?.toString() ?? '1') ?? 1;
+    final paid = int.tryParse(widget.credit['paid_installments']?.toString() ?? '0') ?? 0;
     final installmentValue = total / totalInstallments;
 
     return Container(

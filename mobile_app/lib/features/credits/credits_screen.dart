@@ -71,11 +71,16 @@ class CreditsScreen extends StatelessWidget {
   }
 
   Widget _creditCard(Map<String, dynamic> loan) {
-    double total = double.parse(loan['total_amount'].toString());
-    double remaining = double.parse(loan['remaining_balance'].toString());
+    // Blindaje contra nulos y errores de formato
+    double total = double.tryParse(loan['total_amount']?.toString() ?? '0') ?? 0.0;
+    double remaining = double.tryParse(loan['remaining_balance']?.toString() ?? '0') ?? 0.0;
     double progress = total > 0 ? (total - remaining) / total : 0;
-    int totalInstallments = int.parse(loan['installments'].toString());
-    int paid = int.parse(loan['paid_installments']?.toString() ?? '0');
+    int totalInstallments = int.tryParse(loan['installments']?.toString() ?? '0') ?? 0;
+    int paid = int.tryParse(loan['paid_installments']?.toString() ?? '0') ?? 0;
+    String bank = loan['bank_name']?.toString() ?? 'Banco Desconocido';
+
+    if (progress < 0) progress = 0;
+    if (progress > 1) progress = 1;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -90,7 +95,7 @@ class CreditsScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(loan['bank_name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(bank, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     Text('Letra $paid de $totalInstallments', style: const TextStyle(fontSize: 12, color: Colors.white54)),
                   ],
                 ),
