@@ -12,32 +12,36 @@ class CreditModal extends StatefulWidget {
 
 class _CreditModalState extends State<CreditModal> {
   final _bankController = TextEditingController();
-  final _amountController = TextEditingController();
-  final _rateController = TextEditingController();
-  final _installmentsController = TextEditingController();
+  final _quotaController = TextEditingController(); // Monto de cada cuota
+  final _totalInstallmentsController = TextEditingController();
+  final _paidInstallmentsController = TextEditingController();
+  final _nextDueController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _save() async {
-    if (_amountController.text.isEmpty || _rateController.text.isEmpty || _installmentsController.text.isEmpty) return;
+    if (_bankController.text.isEmpty || _quotaController.text.isEmpty || _totalInstallmentsController.text.isEmpty) return;
+    
     setState(() => _isLoading = true);
     try {
       final userId = SupabaseConfig.client.auth.currentUser!.id;
-      final principal = double.parse(_amountController.text);
-      final rate = double.parse(_rateController.text);
-      final installments = int.parse(_installmentsController.text);
+      final mPayment = double.parse(_quotaController.text);
+      final instTotal = int.parse(_totalInstallmentsController.text);
+      final instPaid = int.parse(_paidInstallmentsController.text.isEmpty ? '0' : _paidInstallmentsController.text);
       
-      // Cálculo automático: Capital + Interés total
-      final totalToReturn = principal + (principal * (rate / 100));
+      // LÓGICA CAJA HUANCAYO:
+      final totalToReturn = mPayment * instTotal;
+      final remaining = mPayment * (instTotal - instPaid);
       
       await SupabaseConfig.client.from('credits').insert({
         'user_id': userId,
         'bank_name': _bankController.text,
         'total_amount': totalToReturn,
-        'remaining_balance': totalToReturn,
-        'interest_rate': rate,
-        'installments': installments,
-        'paid_installments': 0, // Iniciamos en 0 letras pagadas
-        'status': 'activo',
+        'remaining_balance': remaining,
+        'monthly_payment': mPayment,
+        'installments': instTotal,
+        'paid_installments': instPaid,
+        'due_date': _nextDueController.text,
+        'status': instPaid >= instTotal ? 'completado' : 'activo',
         'created_at': DateTime.now().toIso8601String(),
       });
       if (mounted) Navigator.pop(context);
@@ -56,40 +60,42 @@ class _CreditModalState extends State<CreditModal> {
         color: AppTheme.midnightBlue,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Nuevo Crédito', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-          const SizedBox(height: 8),
-          const Text('Se calculará el total con intereses automáticamente.', style: TextStyle(color: Colors.white54, fontSize: 12)),
-          const SizedBox(height: 24),
-          _input('Nombre del Banco', _bankController, LucideIcons.building, TextInputType.text),
-          const SizedBox(height: 16),
-          _input('Monto Prestado (S/)', _amountController, LucideIcons.dollarSign, TextInputType.number),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _input('Tasa Total (%)', _rateController, LucideIcons.percent, TextInputType.number)),
-              const SizedBox(width: 16),
-              Expanded(child: _input('Cant. de Letras', _installmentsController, LucideIcons.list, TextInputType.number)),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.indigoAccent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('REGISTRAR CRÉDITO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Nuevo Crédito', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 24),
+            _input('Nombre del Banco (Ej: Caja Huancayo)', _bankController, LucideIcons.building, TextInputType.text),
+            const SizedBox(height: 16),
+            _input('Monto de cada Cuota (S/)', _quotaController, LucideIcons.dollarSign, TextInputType.number),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _input('Cuotas Totales', _totalInstallmentsController, LucideIcons.list, TextInputType.number)),
+                const SizedBox(width: 16),
+                Expanded(child: _input('Cuotas Pagadas', _paidInstallmentsController, LucideIcons.checkCircle, TextInputType.number)),
+              ],
             ),
-          ),
-          const SizedBox(height: 32),
-        ],
+            const SizedBox(height: 16),
+            _input('Próximo Vencimiento (YYYY-MM-DD)', _nextDueController, LucideIcons.calendar, TextInputType.datetime),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.indigoAccent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('REGISTRAR CRÉDITO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
@@ -101,8 +107,8 @@ class _CreditModalState extends State<CreditModal> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white24),
+        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+        prefixIcon: Icon(icon, color: Colors.white24, size: 20),
         filled: true,
         fillColor: Colors.white.withOpacity(0.05),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),

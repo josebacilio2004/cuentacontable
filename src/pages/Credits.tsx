@@ -109,22 +109,32 @@ export function CreditsPage() {
   };
 
   const handleSave = async () => {
-    if (!bankName || !user || !totalToReturn) return;
+    if (!bankName || !user) return;
     setSaving(true);
+
+    const mPayment = parseFloat(monthlyPayment);
+    const instTotal = parseInt(installmentsTotal);
+    const instPaid = parseInt(installmentsPaid) || 0;
+    
+    // LÓGICA BANCARIA REAL:
+    // El total a devolver es el valor de la cuota por el total de letras
+    const calculatedTotal = mPayment * instTotal;
+    // El saldo pendiente es la cuota por las letras que faltan
+    const calculatedRemaining = mPayment * (instTotal - instPaid);
 
     const { error } = await supabase.from('credits').insert({
       user_id: user.id,
       bank_name: bankName,
-      total_amount: parseFloat(totalToReturn),
-      remaining_balance: parseFloat(totalToReturn),
-      monthly_payment: parseFloat(monthlyPayment) || (parseFloat(totalToReturn) / parseInt(installmentsTotal)),
+      total_amount: calculatedTotal,
+      remaining_balance: calculatedRemaining,
+      monthly_payment: mPayment,
       due_date: dueDate,
-      installments_total: parseInt(installmentsTotal),
-      installments_paid: parseInt(installmentsPaid) || 0,
+      installments_total: instTotal,
+      installments_paid: instPaid,
       payment_frequency: paymentFrequency,
       interest_rate: parseFloat(interestRate),
       interest_type: interestType,
-      total_to_return: parseFloat(totalToReturn)
+      total_to_return: calculatedTotal
     });
 
     if (!error) {
