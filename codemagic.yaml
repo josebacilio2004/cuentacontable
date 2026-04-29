@@ -1,50 +1,48 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow
-    instance_type: mac_mini_m1
+  full-workflow:
+    name: CuentaContable Multi-Platform Build
     max_build_duration: 60
+    instance_type: mac_mini_m1
     working_directory: mobile_app
     environment:
       flutter: stable
       xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'master'
+          include: true
     scripts:
-      - name: Initialize iOS project
+      - name: Initialize iOS & Get Packages
         script: |
-          # Forzamos la creación del Podfile y archivos de iOS si no existen
           flutter create . --platforms=ios
+          flutter pub get
       - name: Install CocoaPods
         script: |
           cd ios && pod install
-      - name: Build iOS Release
-        script: |
-          flutter build ios --release --no-codesign
-      - name: Create IPA for Sideloadly
-        script: |
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -r cuentacontable.ipa Payload
-          mkdir -p build/ios/ipa
-          mv cuentacontable.ipa build/ios/ipa/
-    artifacts:
-      - build/ios/ipa/*.ipa
-
-  android-workflow:
-    name: Android Workflow
-    instance_type: mac_mini_m1
-    max_build_duration: 30
-    working_directory: mobile_app
-    environment:
-      flutter: stable
-    scripts:
-      - name: Install dependencies
-        script: |
-          flutter packages pub get
-      - name: Flutter build APK
+      - name: Build Android APK
         script: |
           flutter build apk --release
+      - name: Build iOS (Unsigned IPA)
+        script: |
+          # Compilar el binario puro de iOS
+          flutter build ios --release --no-codesign
+          
+          # Crear la estructura manual para Sideloadly
+          mkdir -p build/ios/ipa/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          
+          # Comprimirlo a formato .ipa
+          cd build/ios/ipa
+          zip -qr CuentaContable.ipa Payload
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
+      - build/ios/ipa/CuentaContable.ipa
     publishing:
       email:
         recipients:
           - josebacilio2004@gmail.com
+        notify:
+          success: true
+          failure: true
