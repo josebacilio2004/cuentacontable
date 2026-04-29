@@ -7,9 +7,11 @@ class CreditsScreen extends StatelessWidget {
   const CreditsScreen({super.key});
 
   Stream<List<Map<String, dynamic>>> _creditsStream() {
+    final userId = SupabaseConfig.client.auth.currentUser!.id;
     return SupabaseConfig.client
         .from('credits')
         .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
         .order('created_at', ascending: false);
   }
 

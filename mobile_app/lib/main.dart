@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cuentacontable_mobile/core/config/supabase_config.dart';
 import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:cuentacontable_mobile/features/auth/login_screen.dart';
 import 'package:cuentacontable_mobile/features/dashboard/dashboard_screen.dart';
 import 'package:cuentacontable_mobile/features/credits/credits_screen.dart';
+import 'package:cuentacontable_mobile/features/goals/goals_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 void main() async {
@@ -20,7 +23,25 @@ class CuentaContableApp extends StatelessWidget {
       title: 'CuentaContable',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const DashboardWrapper(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: SupabaseConfig.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = SupabaseConfig.client.auth.currentSession;
+        if (session != null) {
+          return const DashboardWrapper();
+        }
+        return const LoginScreen();
+      },
     );
   }
 }
@@ -43,7 +64,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
         children: const [
           DashboardScreen(),
           CreditsScreen(),
-          Center(child: Text('Metas')),
+          GoalsScreen(),
           Center(child: Text('Perfil')),
         ],
       ),

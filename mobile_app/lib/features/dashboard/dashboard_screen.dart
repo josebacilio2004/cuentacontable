@@ -7,9 +7,11 @@ class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   Stream<double> _balanceStream() {
+    final userId = SupabaseConfig.client.auth.currentUser!.id;
     return SupabaseConfig.client
         .from('transactions')
         .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
         .map((data) {
           double income = 0;
           double expense = 0;
@@ -57,7 +59,53 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Text('Actividad Reciente', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
-            // Aquí iría una lista de transacciones real-time
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: SupabaseConfig.client
+                  .from('transactions')
+                  .stream(primaryKey: ['id'])
+                  .eq('user_id', SupabaseConfig.client.auth.currentUser!.id)
+                  .order('created_at', ascending: false)
+                  .limit(10),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final txs = snapshot.data ?? [];
+                if (txs.isEmpty) {
+                  return const Text('No hay actividad aún', style: TextStyle(color: Colors.white24));
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: txs.length,
+                  itemBuilder: (context, index) {
+                    final tx = txs[index];
+                    bool isIncome = tx['type'] == 'income';
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: (isIncome ? Colors.green : Colors.red).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(isIncome ? LucideIcons.arrowUpRight : LucideIcons.arrowDownRight, 
+                          color: isIncome ? Colors.greenAccent : Colors.redAccent, size: 20),
+                      ),
+                      title: Text(tx['category'] ?? 'General', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text(tx['description'] ?? '', style: const TextStyle(color: Colors.white24, fontSize: 12)),
+                      trailing: Text(
+                        '${isIncome ? '+' : '-'} S/ ${double.parse(tx['amount'].toString()).toLocaleString()}',
+                        style: TextStyle(
+                          color: isIncome ? Colors.greenAccent : Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
