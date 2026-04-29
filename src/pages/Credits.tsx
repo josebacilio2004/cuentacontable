@@ -34,6 +34,34 @@ export function CreditsPage() {
   const [dueDate, setDueDate] = useState('');
   const [installmentsTotal, setInstallmentsTotal] = useState('');
   const [installmentsPaid, setInstallmentsPaid] = useState('');
+  const [paymentFrequency, setPaymentFrequency] = useState('mensual');
+  const [interestRate, setInterestRate] = useState('');
+  const [interestType, setInterestType] = useState('TEA');
+  const [totalToReturn, setTotalToReturn] = useState('');
+
+  // UI States
+  const [selectedCredit, setSelectedCredit] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [isPaying, setIsPaying] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  // Helper to calculate total to return
+  useEffect(() => {
+    if (totalAmount && interestRate) {
+      const capital = parseFloat(totalAmount);
+      const rate = parseFloat(interestRate) / 100;
+      let total = capital;
+      
+      if (interestType === 'Monto Fijo') {
+        total = capital + parseFloat(interestRate);
+      } else {
+        // Simplificación: Interés simple para el cálculo de "Total a Devolver"
+        // ya que el banco suele dar el monto final proyectado.
+        total = capital * (1 + rate);
+      }
+      setTotalToReturn(total.toFixed(2));
+    }
+  }, [totalAmount, interestRate, interestType]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -57,7 +85,7 @@ export function CreditsPage() {
   };
 
   const handleSave = async () => {
-    if (!bankName || !user) return;
+    if (!bankName || !user || !totalToReturn) return;
     setSaving(true);
 
     const { error } = await supabase.from('credits').insert({
@@ -68,7 +96,11 @@ export function CreditsPage() {
       monthly_payment: parseFloat(monthlyPayment),
       due_date: dueDate,
       installments_total: parseInt(installmentsTotal),
-      installments_paid: parseInt(installmentsPaid)
+      installments_paid: parseInt(installmentsPaid),
+      payment_frequency: paymentFrequency,
+      interest_rate: parseFloat(interestRate),
+      interest_type: interestType,
+      total_to_return: parseFloat(totalToReturn)
     });
 
     if (!error) {
@@ -79,6 +111,47 @@ export function CreditsPage() {
     setSaving(false);
   };
 
+  const handleAbono = async () => {
+    if (!selectedCredit || !paymentAmount || !user) return;
+    setIsPaying(true);
+
+    const amount = parseFloat(paymentAmount);
+
+    // 1. Registrar Egreso
+    const { error: txError } = await supabase.from('transactions').insert({
+      user_id: user.id,
+      amount: amount,
+      type: 'expense',
+      category: 'Créditos',
+      description: `Abono a crédito ${selectedCredit.bank_name}`,
+      date: format(new Date(), 'yyyy-MM-dd')
+    });
+
+    if (txError) {
+      alert("Error al registrar el abono.");
+      setIsPaying(false);
+      return;
+    }
+
+    // 2. Actualizar Crédito
+    const newRemaining = selectedCredit.remaining_balance - amount;
+    const { error: creditError } = await supabase
+      .from('credits')
+      .update({
+        remaining_balance: newRemaining,
+        installments_paid: selectedCredit.installments_paid + 1
+      })
+      .eq('id', selectedCredit.id);
+
+    if (!creditError) {
+      setSelectedCredit(null);
+      setPaymentAmount('');
+      fetchCredits(user.id);
+    }
+
+    setIsPaying(false);
+  };
+
   const resetForm = () => {
     setBankName('');
     setTotalAmount('');
@@ -87,6 +160,10 @@ export function CreditsPage() {
     setDueDate('');
     setInstallmentsTotal('');
     setInstallmentsPaid('');
+    setPaymentFrequency('mensual');
+    setInterestRate('');
+    setInterestType('TEA');
+    setTotalToReturn('');
   };
 
   const handleDelete = async (id: string) => {
@@ -125,21 +202,51 @@ export function CreditsPage() {
               <input type="text" value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Ej: BCP, BBVA" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('amount')} Total</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Capital Solicitado</label>
               <input type="number" value={totalAmount} onChange={e => setTotalAmount(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Saldo Pendiente</label>
-              <input type="number" value={remainingBalance} onChange={e => setRemainingBalance(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Frecuencia de Pago</label>
+              <select value={paymentFrequency} onChange={e => setPaymentFrequency(e.target.value)} className="w-full bg-[#0f172a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500">
+                <option value="mensual">Mensual</option>
+                <option value="semanal">Semanal</option>
+              </select>
             </div>
+
             <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuota Mensual</label>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tasa / Interés</label>
+              <div className="flex gap-2">
+                <input type="number" value={interestRate} onChange={e => setInterestRate(e.target.value)} placeholder="Ej: 15" className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
+                <select value={interestType} onChange={e => setInterestType(e.target.value)} className="w-24 bg-[#0f172a] border border-white/10 rounded-xl px-2 py-3 text-sm text-white outline-none focus:border-indigo-500">
+                  <option value="TEA">TEA %</option>
+                  <option value="TEM">TEM %</option>
+                  <option value="Monto Fijo">S/ Fijo</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest text-indigo-400">Total a Devolver (Est.)</label>
+              <div className="w-full bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-4 py-3 text-sm text-white font-bold">
+                S/ {totalToReturn || '0.00'}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Monto de Cuota</label>
               <input type="number" value={monthlyPayment} onChange={e => setMonthlyPayment(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Saldo Pendiente Real</label>
+              <input type="number" value={remainingBalance} onChange={e => setRemainingBalance(e.target.value)} placeholder="0.00" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
+            </div>
+            
             <div className="space-y-2">
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Próximo Vencimiento</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-[#0f172a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500" />
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cuotas Totales</label>
@@ -211,13 +318,13 @@ export function CreditsPage() {
                           </div>
                           <div>
                             <h4 className="font-bold text-white text-lg">{loan.bank_name}</h4>
-                            <p className="text-xs text-slate-500 font-medium">Cuota {loan.installments_paid}/{loan.installments_total}</p>
+                            <p className="text-xs text-slate-500 font-medium">Frecuencia: <span className="capitalize">{loan.payment_frequency}</span></p>
                           </div>
                       </div>
                       
                       <div className="flex-1 max-w-md hidden sm:block">
                           <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-                            <span>Progreso de Pago</span>
+                            <span>Progreso (S/ {loan.remaining_balance?.toLocaleString()} pendiente)</span>
                             <span>{progress}%</span>
                           </div>
                           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
@@ -226,19 +333,35 @@ export function CreditsPage() {
                               style={{ width: `${progress}%` }}
                             ></div>
                           </div>
+                          <div className="flex justify-between mt-2">
+                             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Interés proyectado: S/ {(loan.total_to_return - loan.total_amount).toLocaleString()}</span>
+                             <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-tighter">Costo Total: {(((loan.total_to_return - loan.total_amount) / loan.total_amount) * 100).toFixed(1)}%</span>
+                          </div>
                       </div>
 
-                      <div className="flex items-center gap-8 justify-between md:justify-end">
+                      <div className="flex items-center gap-6 justify-between md:justify-end">
                           <div className="text-right">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Próximo Pago</p>
-                            <p className="text-sm font-bold text-white">{t('currency')}{Number(loan.monthly_payment).toLocaleString()} • {loan.due_date ? format(new Date(loan.due_date), 'dd MMM', { locale: es }) : 'N/A'}</p>
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Próxima Cuota</p>
+                            <p className="text-sm font-bold text-white">S/ {Number(loan.monthly_payment).toLocaleString()} • {loan.due_date ? format(new Date(loan.due_date + 'T12:00:00'), 'dd MMM', { locale: es }) : 'N/A'}</p>
                           </div>
-                          <button 
-                            onClick={() => handleDelete(loan.id)}
-                            className="p-2 rounded-xl bg-white/5 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                          >
-                            <Trash2 size={20} />
-                          </button>
+                          
+                          <div className="flex items-center gap-2">
+                             <button 
+                               onClick={() => {
+                                 setSelectedCredit(loan);
+                                 setPaymentAmount(loan.monthly_payment.toString());
+                               }}
+                               className="px-4 py-2 bg-indigo-500 text-white text-xs font-bold rounded-xl hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/10"
+                             >
+                               Abonar
+                             </button>
+                             <button 
+                               onClick={() => handleDelete(loan.id)}
+                               className="p-2 rounded-xl bg-white/5 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                             >
+                               <Trash2 size={20} />
+                             </button>
+                          </div>
                       </div>
                     </Card>
                   );
@@ -254,6 +377,135 @@ export function CreditsPage() {
            </Card>
         </section>
       </div>
+      </div>
+
+      {/* Abono Modal */}
+      {selectedCredit && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-md p-8 relative animate-in slide-in-from-bottom-4 duration-300 shadow-2xl border-indigo-500/30">
+            <button 
+              onClick={() => setSelectedCredit(null)}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                <CreditCard size={32} className="text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white">Abonar a Cuota</h3>
+                <p className="text-slate-400 text-sm">{selectedCredit.bank_name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Monto a Pagar (Soles)</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-white">S/</span>
+                  <input 
+                    type="number" 
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    className="w-full bg-transparent border-none text-4xl font-bold text-white focus:ring-0 p-0 placeholder-white/10"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+                <ShieldCheck size={20} className="text-amber-400 shrink-0" />
+                <p className="text-xs text-slate-400">Esta acción descontará el saldo de tu navbar y registrará un egreso automáticamente.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => setSelectedCredit(null)}
+                  className="py-4 bg-white/5 text-slate-400 font-bold rounded-2xl hover:bg-white/10 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleAbono}
+                  disabled={isPaying || !paymentAmount}
+                  className="py-4 bg-indigo-500 text-white font-bold rounded-2xl hover:bg-indigo-400 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center"
+                >
+                  {isPaying ? <Loader2 className="animate-spin" /> : 'Confirmar'}
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Floating Calendar Button */}
+      <button 
+        onClick={() => setShowCalendar(true)}
+        className="fixed bottom-24 right-8 lg:bottom-12 lg:right-12 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-500/40 flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40 group"
+      >
+        <Calendar size={28} />
+        <span className="absolute right-20 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap pointer-events-none">Ver Calendario de Pagos</span>
+      </button>
+
+      {/* Calendar Overlay */}
+      {showCalendar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+           <Card className="w-full max-w-4xl p-8 relative animate-in zoom-in-95 duration-300 bg-slate-950/90">
+              <button 
+                onClick={() => setShowCalendar(false)}
+                className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-all"
+              >
+                <X size={24} />
+              </button>
+              
+              <div className="mb-8">
+                 <h3 className="text-3xl font-bold text-white mb-2">Calendario de Pagos</h3>
+                 <p className="text-slate-500">Organiza tus próximos vencimientos bancarios.</p>
+              </div>
+
+              <div className="grid grid-cols-7 gap-4 mb-8">
+                 {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+                   <div key={d} className="text-center text-[10px] font-bold text-slate-600 uppercase">{d}</div>
+                 ))}
+                 {/* Simplified Grid */}
+                 {Array.from({ length: 31 }).map((_, i) => {
+                   const day = i + 1;
+                   const hasPayment = credits.some(c => c.due_date && new Date(c.due_date + 'T12:00:00').getDate() === day);
+                   return (
+                     <div key={i} className={cn(
+                       "h-20 rounded-2xl border flex flex-col items-center justify-center relative transition-all",
+                       hasPayment ? "bg-indigo-500/10 border-indigo-500/30 text-white" : "bg-white/5 border-white/5 text-slate-600"
+                     )}>
+                        <span className="text-sm font-bold">{day}</span>
+                        {hasPayment && (
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1"></div>
+                        )}
+                        {hasPayment && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-indigo-600 rounded-2xl transition-all cursor-help p-2 text-center">
+                             <span className="text-[8px] font-black leading-tight uppercase">Pago Pendiente</span>
+                          </div>
+                        )}
+                     </div>
+                   );
+                 })}
+              </div>
+
+              <div className="bg-white/5 rounded-2xl p-6 flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/20">
+                       <Zap size={20} />
+                    </div>
+                    <div>
+                       <p className="text-sm font-bold text-white">Próximo Vencimiento Crítico</p>
+                       <p className="text-xs text-slate-400">BCP - 25 de Mayo (S/ 417.50)</p>
+                    </div>
+                 </div>
+                 <button className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all">Ver todos los detalles</button>
+              </div>
+           </Card>
+        </div>
+      )}
     </div>
   );
 }

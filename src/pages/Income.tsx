@@ -24,6 +24,7 @@ export function IncomePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [selectedIncome, setSelectedIncome] = useState<any>(null);
 
   // Form State
   const [amount, setAmount] = useState('');
@@ -139,13 +140,17 @@ export function IncomePage() {
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {incomes.map((tx) => (
-                    <tr key={tx.id} className="group hover:bg-white/5 transition-colors">
+                    <tr 
+                      key={tx.id} 
+                      onClick={() => setSelectedIncome(tx)}
+                      className="group hover:bg-white/5 transition-colors cursor-pointer"
+                    >
                       <td className="px-6 py-5 text-slate-300 text-sm whitespace-nowrap">
                         {format(new Date(tx.date + 'T12:00:00'), 'dd MMM', { locale: es })}
                       </td>
                       <td className="px-6 py-5">
                         <div className="font-medium text-white">{tx.category}</div>
-                        <div className="text-[10px] text-slate-500">{tx.description || 'Sin descripción'}</div>
+                        <div className="text-[10px] text-slate-500 line-clamp-1">{tx.description || 'Sin descripción'}</div>
                       </td>
                       <td className="px-6 py-5">
                         <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-white/5 text-slate-300 border border-white/10 group-hover:border-indigo-500/30 group-hover:text-indigo-400 transition-colors uppercase">
@@ -155,7 +160,10 @@ export function IncomePage() {
                       <td className="px-6 py-5 text-right font-bold text-emerald-400">{t('currency')}{Number(tx.amount).toLocaleString()}</td>
                       <td className="px-6 py-5 text-right">
                         <button 
-                          onClick={() => handleDelete(tx.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(tx.id);
+                          }}
                           className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         >
                           <Trash2 size={16} />
@@ -236,6 +244,60 @@ export function IncomePage() {
           </Card>
         </div>
       </div>
+
+      {/* Details Modal */}
+      {selectedIncome && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-md p-8 relative animate-in slide-in-from-bottom-4 duration-300">
+            <button 
+              onClick={() => setSelectedIncome(null)}
+              className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                <TrendingUp size={32} className="text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white">Detalle de Ingreso</h3>
+                <p className="text-slate-400 text-sm">Información de la transacción</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Monto</p>
+                  <p className="text-xl font-bold text-emerald-400">S/ {Number(selectedIncome.amount).toLocaleString()}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Fecha</p>
+                  <p className="text-white font-bold">{format(new Date(selectedIncome.date + 'T12:00:00'), 'dd MMMM, yyyy', { locale: es })}</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Categoría</p>
+                <p className="text-white font-bold">{selectedIncome.category}</p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 min-h-[100px]">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Descripción</p>
+                <p className="text-slate-300 text-sm leading-relaxed">{selectedIncome.description || 'Sin descripción detallada.'}</p>
+              </div>
+
+              <button 
+                onClick={() => setSelectedIncome(null)}
+                className="w-full py-4 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-700 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

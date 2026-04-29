@@ -18,17 +18,21 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Tabla de Créditos
+-- Tabla de Créditos (Actualizada)
 CREATE TABLE IF NOT EXISTS credits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   bank_name TEXT NOT NULL,
-  total_amount DECIMAL(12,2) NOT NULL,
+  total_amount DECIMAL(12,2) NOT NULL, -- Capital solicitado
   remaining_balance DECIMAL(12,2) NOT NULL,
   monthly_payment DECIMAL(12,2) NOT NULL,
   due_date DATE,
   installments_total INTEGER,
   installments_paid INTEGER DEFAULT 0,
+  payment_frequency TEXT DEFAULT 'mensual', -- 'mensual' o 'semanal'
+  interest_rate DECIMAL(5,2) DEFAULT 0, -- TEA o TEM
+  interest_type TEXT DEFAULT 'TEA', -- 'TEA', 'TEM' o 'Monto Fijo'
+  total_to_return DECIMAL(12,2) NOT NULL, -- Capital + Intereses
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

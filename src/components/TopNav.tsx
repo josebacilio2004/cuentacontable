@@ -24,8 +24,68 @@ const userNames: Record<string, string> = {
 export function TopNav({ user }: TopNavProps) {
   const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
   const displayName = userNames[user?.email] || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
+
+  useEffect(() => {
+    if (user) {
+      fetchData();
+      // Suscribirse a cambios en tiempo real
+      const channel = supabase
+        .channel('db-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'credits' }, fetchData)
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user]);
+
+  const fetchData = async () => {
+    // Calcular Saldo
+    const { data: txs } = await supabase
+      .from('transactions')
+      .select('amount, type')
+      .eq('user_id', user.id);
+
+    if (txs) {
+      const income = txs.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
+      const expense = txs.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
+      setBalance(income - expense);
+    }
+
+    // Detectar Créditos Próximos
+    const { data: credits } = await supabase
+      .from('credits')
+      .select('*')
+      .eq('user_id', user.id)
+      .gt('remaining_balance', 0);
+
+    if (credits) {
+      const newNotifs = credits
+        .filter(c => {
+          if (!c.due_date) return false;
+          const due = new Date(c.due_date);
+          const today = new Date();
+          const diff = (due.getTime() - today.getTime()) / (1000 * 3600 * 24);
+          return diff <= 5 && diff >= 0;
+        })
+        .map(c => ({
+          id: c.id,
+          title: 'Vencimiento Próximo',
+          message: `Tu pago de ${c.bank_name} vence pronto (S/ ${c.monthly_payment})`,
+          time: 'Ahora',
+          type: 'warning',
+          unread: true
+        }));
+      setNotifications(newNotifs);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -40,13 +100,21 @@ export function TopNav({ user }: TopNavProps) {
             </div>
             <span className="text-sm font-black text-white uppercase tracking-widest">CuentaContable</span>
          </div>
-         <div className="hidden md:flex items-center gap-2 text-slate-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-            <Search size={16} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="bg-transparent border-none text-sm focus:ring-0 text-white w-48"
-            />
+         <div className="hidden md:flex items-center gap-4">
+            <div className="flex items-center gap-2 text-slate-400 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+               <Search size={16} />
+               <input 
+                 type="text" 
+                 placeholder="Search..." 
+                 className="bg-transparent border-none text-sm focus:ring-0 text-white w-48"
+               />
+            </div>
+            {/* Contador de Saldo Real */}
+            <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Saldo:</span>
+               <span className="text-sm font-black text-white">S/ {balance.toLocaleString()}</span>
+            </div>
          </div>
       </div>
       
@@ -60,49 +128,49 @@ export function TopNav({ user }: TopNavProps) {
             )}
           >
             <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full border border-background"></span>
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-background"></span>
+            )}
           </button>
 
           {showNotifications && (
             <div className="absolute right-0 mt-4 w-80 lg:w-96 glass-card rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <h3 className="font-bold text-white">Notificaciones</h3>
-                <button className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest hover:underline">Marcar todas como leídas</button>
+                <span className="bg-indigo-500 text-[10px] font-bold px-2 py-0.5 rounded-full">{notifications.length}</span>
               </div>
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                {mockNotifications.map((notif) => (
-                  <div key={notif.id} className={cn(
-                    "p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer relative",
-                    notif.unread && "bg-indigo-500/5"
-                  )}>
-                    <div className="flex gap-4">
-                      <div className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
-                        notif.type === 'warning' && "bg-amber-500/10 text-amber-400",
-                        notif.type === 'success' && "bg-emerald-500/10 text-emerald-400",
-                        notif.type === 'info' && "bg-indigo-500/10 text-indigo-400",
-                      )}>
-                        {notif.type === 'warning' && <AlertCircle size={18} />}
-                        {notif.type === 'success' && <Check size={18} />}
-                        {notif.type === 'info' && <Info size={18} />}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-start">
-                          <p className="text-sm font-bold text-white">{notif.title}</p>
-                          <span className="text-[10px] text-slate-500 font-medium">{notif.time}</span>
+                {notifications.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500 text-sm italic">No hay alertas pendientes.</div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div key={notif.id} className={cn(
+                      "p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer relative",
+                      notif.unread && "bg-indigo-500/5"
+                    )}>
+                      <div className="flex gap-4">
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                          notif.type === 'warning' && "bg-amber-500/10 text-amber-400",
+                          notif.type === 'success' && "bg-emerald-500/10 text-emerald-400",
+                          notif.type === 'info' && "bg-indigo-500/10 text-indigo-400",
+                        )}>
+                          {notif.type === 'warning' && <AlertCircle size={18} />}
+                          {notif.type === 'success' && <Check size={18} />}
+                          {notif.type === 'info' && <Info size={18} />}
                         </div>
-                        <p className="text-xs text-slate-400 leading-relaxed">{notif.message}</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-start">
+                            <p className="text-sm font-bold text-white">{notif.title}</p>
+                            <span className="text-[10px] text-slate-500 font-medium">{notif.time}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 leading-relaxed">{notif.message}</p>
+                        </div>
                       </div>
                     </div>
-                    {notif.unread && (
-                      <div className="absolute right-4 bottom-4 w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                    )}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
-              <button className="w-full p-4 text-center text-xs font-bold text-slate-500 hover:text-white transition-colors bg-white/5 border-t border-white/5">
-                Ver todo el historial
-              </button>
             </div>
           )}
         </div>
