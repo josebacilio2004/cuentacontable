@@ -27,7 +27,12 @@ class CuentaContableApp extends StatelessWidget {
       title: 'CuentaContable',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      home: const AuthGate(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const AuthGate(),
+        '/login': (context) => const LoginScreen(),
+        '/dashboard': (context) => const DashboardWrapper(),
+      },
     );
   }
 }

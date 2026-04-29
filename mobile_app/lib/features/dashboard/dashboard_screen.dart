@@ -88,6 +88,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _signOut() async {
+    await Supabase.instance.client.auth.signOut();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,6 +106,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icon(_isBalanceHidden ? LucideIcons.eyeOff : LucideIcons.eye, size: 20),
           ),
           IconButton(onPressed: () {}, icon: const Icon(LucideIcons.bell, size: 20)),
+          IconButton(
+            onPressed: _signOut,
+            icon: const Icon(LucideIcons.logOut, size: 20, color: Colors.redAccent),
+          ),
         ],
       ),
       body: SingleChildScrollView(
