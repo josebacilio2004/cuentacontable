@@ -12,24 +12,32 @@ class CreditModal extends StatefulWidget {
 
 class _CreditModalState extends State<CreditModal> {
   final _bankController = TextEditingController();
-  final _quotaController = TextEditingController(); // Monto de cada cuota
+  final _capitalController = TextEditingController(); // Capital solicitado
+  final _teaController = TextEditingController();     // Tasa TEA
   final _totalInstallmentsController = TextEditingController();
   final _paidInstallmentsController = TextEditingController();
   final _nextDueController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _save() async {
-    if (_bankController.text.isEmpty || _quotaController.text.isEmpty || _totalInstallmentsController.text.isEmpty) return;
+    if (_bankController.text.isEmpty || _capitalController.text.isEmpty || _teaController.text.isEmpty || _totalInstallmentsController.text.isEmpty) return;
     
     setState(() => _isLoading = true);
     try {
       final userId = SupabaseConfig.client.auth.currentUser!.id;
-      final mPayment = double.parse(_quotaController.text);
+      final capital = double.parse(_capitalController.text);
+      final tea = double.parse(_teaController.text);
       final instTotal = int.parse(_totalInstallmentsController.text);
       final instPaid = int.parse(_paidInstallmentsController.text.isEmpty ? '0' : _paidInstallmentsController.text);
       
-      // LÓGICA CAJA HUANCAYO:
-      final totalToReturn = mPayment * instTotal;
+      // 📐 LÓGICA AUTOMÁTICA BASADA EN TEA:
+      // 1. Deuda Total = Capital * (1 + TEA/100)
+      final totalToReturn = capital * (1 + (tea / 100));
+      
+      // 2. Cuota = Deuda Total / Cantidad de Letras
+      final mPayment = totalToReturn / instTotal;
+      
+      // 3. Saldo Pendiente = Cuota * (Letras Pendientes)
       final remaining = mPayment * (instTotal - instPaid);
       
       await SupabaseConfig.client.from('credits').insert({
@@ -41,6 +49,7 @@ class _CreditModalState extends State<CreditModal> {
         'installments': instTotal,
         'paid_installments': instPaid,
         'due_date': _nextDueController.text,
+        'interest_rate': tea,
         'status': instPaid >= instTotal ? 'completado' : 'activo',
         'created_at': DateTime.now().toIso8601String(),
       });
@@ -67,15 +76,17 @@ class _CreditModalState extends State<CreditModal> {
           children: [
             const Text('Nuevo Crédito', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 24),
-            _input('Nombre del Banco (Ej: Caja Huancayo)', _bankController, LucideIcons.building, TextInputType.text),
+            _input('Nombre del Banco', _bankController, LucideIcons.building, TextInputType.text),
             const SizedBox(height: 16),
-            _input('Monto de cada Cuota (S/)', _quotaController, LucideIcons.dollarSign, TextInputType.number),
+            _input('Capital Solicitado (S/)', _capitalController, LucideIcons.dollarSign, TextInputType.number),
+            const SizedBox(height: 16),
+            _input('Tasa Anual (%) TEA', _teaController, LucideIcons.percent, TextInputType.number),
             const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(child: _input('Cuotas Totales', _totalInstallmentsController, LucideIcons.list, TextInputType.number)),
+                Expanded(child: _input('Letras Totales', _totalInstallmentsController, LucideIcons.list, TextInputType.number)),
                 const SizedBox(width: 16),
-                Expanded(child: _input('Cuotas Pagadas', _paidInstallmentsController, LucideIcons.checkCircle, TextInputType.number)),
+                Expanded(child: _input('Letras Pagadas', _paidInstallmentsController, LucideIcons.checkCircle, TextInputType.number)),
               ],
             ),
             const SizedBox(height: 16),

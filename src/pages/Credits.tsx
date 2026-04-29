@@ -109,17 +109,21 @@ export function CreditsPage() {
   };
 
   const handleSave = async () => {
-    if (!bankName || !user) return;
+    if (!bankName || !user || !totalAmount || !interestRate || !installmentsTotal) return;
     setSaving(true);
 
-    const mPayment = parseFloat(monthlyPayment);
+    const capital = parseFloat(totalAmount);
+    const rate = parseFloat(interestRate);
     const instTotal = parseInt(installmentsTotal);
     const instPaid = parseInt(installmentsPaid) || 0;
     
-    // LÓGICA BANCARIA REAL:
-    // El total a devolver es el valor de la cuota por el total de letras
-    const calculatedTotal = mPayment * instTotal;
-    // El saldo pendiente es la cuota por las letras que faltan
+    // 1. Deuda Total Proyectada (Capital + Interés TEA)
+    const calculatedTotal = capital * (1 + (rate / 100));
+    
+    // 2. Monto de la Cuota
+    const mPayment = calculatedTotal / instTotal;
+    
+    // 3. Saldo Pendiente Real (Cuotas restantes)
     const calculatedRemaining = mPayment * (instTotal - instPaid);
 
     const { error } = await supabase.from('credits').insert({
@@ -132,7 +136,7 @@ export function CreditsPage() {
       installments_total: instTotal,
       installments_paid: instPaid,
       payment_frequency: paymentFrequency,
-      interest_rate: parseFloat(interestRate),
+      interest_rate: rate,
       interest_type: interestType,
       total_to_return: calculatedTotal
     });
