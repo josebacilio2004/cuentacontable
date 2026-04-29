@@ -1,0 +1,23 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    working_directory: mobile_app
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter packages pub get
+      - name: Flutter build IPA
+        script: |
+          # Compilamos el IPA sin firma (para que luego lo firmes con Sideloadly)
+          flutter build ipa --release --no-codesign
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      email:
+        recipients:
+          - josebacilio2004@gmail.com # Cambia esto si prefieres otro correo
