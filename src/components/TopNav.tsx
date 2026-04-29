@@ -26,6 +26,12 @@ export function TopNav({ user }: TopNavProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [balance, setBalance] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const displayName = userNames[user?.email] || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`;
@@ -173,6 +179,16 @@ export function TopNav({ user }: TopNavProps) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Real-time Clock */}
+        <div className="hidden lg:flex flex-col items-end mr-4">
+           <span className="text-sm font-black text-white leading-none">
+             {format(currentTime, 'HH:mm:ss')}
+           </span>
+           <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-tighter mt-1">
+             {format(currentTime, "eeee, d 'de' MMMM", { locale: es })}
+           </span>
         </div>
         
         <div className="flex items-center gap-3 pl-4 border-l border-white/10">

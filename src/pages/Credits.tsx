@@ -47,6 +47,15 @@ export function CreditsPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 16));
 
+  useEffect(() => {
+    if (selectedCredit) {
+      // Ajuste de zona horaria para datetime-local
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      setPaymentDate(now.toISOString().slice(0, 16));
+    }
+  }, [selectedCredit]);
+
   // Helper to calculate total to return
   useEffect(() => {
     if (totalAmount && interestRate) {
