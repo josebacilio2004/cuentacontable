@@ -1,0 +1,91 @@
+import 'package:flutter/material.dart';
+import 'package:cuentacontable_mobile/core/config/supabase_config.dart';
+import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+class CreditsScreen extends StatelessWidget {
+  const CreditsScreen({super.key});
+
+  Stream<List<Map<String, dynamic>>> _creditsStream() {
+    return SupabaseConfig.client
+        .from('credits')
+        .stream(primaryKey: ['id'])
+        .order('created_at', ascending: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tus Créditos')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: AppTheme.indigoAccent,
+        child: const Icon(LucideIcons.plus),
+      ),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _creditsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final credits = snapshot.data ?? [];
+          if (credits.isEmpty) {
+            return const Center(child: Text('No hay créditos registrados', style: TextStyle(color: Colors.white54)));
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: credits.length,
+            itemBuilder: (context, index) {
+              final loan = credits[index];
+              return _creditCard(loan);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _creditCard(Map<String, dynamic> loan) {
+    double total = double.parse(loan['total_amount'].toString());
+    double remaining = double.parse(loan['remaining_balance'].toString());
+    double progress = total > 0 ? (total - remaining) / total : 0;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(loan['bank_name'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Icon(LucideIcons.zap, color: Colors.amberAccent, size: 20),
+              ],
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white10,
+              color: AppTheme.indigoAccent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('S/ ${remaining.toLocaleString()} pendientes', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                Text('${(progress * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.indigoAccent)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+extension DoubleExt on double {
+  String toLocaleString() => toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
+}
