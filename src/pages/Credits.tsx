@@ -68,9 +68,20 @@ export function CreditsPage() {
         total = capital * (1 + rate);
       }
       setTotalToReturn(total.toFixed(2));
-      setRemainingBalance(total.toFixed(2));
+      
+      // Cálculo dinámico del Saldo Pendiente Real
+      if (installmentsTotal && installmentsPaid) {
+        const totalInst = parseInt(installmentsTotal);
+        const paidInst = parseInt(installmentsPaid);
+        if (totalInst > 0) {
+          const remaining = total * (1 - (paidInst / totalInst));
+          setRemainingBalance(remaining.toFixed(2));
+        }
+      } else {
+        setRemainingBalance(total.toFixed(2));
+      }
     }
-  }, [totalAmount, interestRate, interestType]);
+  }, [totalAmount, interestRate, interestType, installmentsTotal, installmentsPaid]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {

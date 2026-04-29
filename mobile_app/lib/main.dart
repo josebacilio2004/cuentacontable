@@ -13,8 +13,20 @@ import 'package:cuentacontable_mobile/core/config/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseConfig.initialize();
-  await NotificationService.initialize();
+  
+  // Blindaje de Arranque: La App arrancará incluso si los servicios fallan
+  try {
+    await SupabaseConfig.initialize();
+  } catch (e) {
+    debugPrint('Error inicializando Supabase: $e');
+  }
+
+  try {
+    await NotificationService.initialize();
+  } catch (e) {
+    debugPrint('Error inicializando Notificaciones: $e');
+  }
+
   runApp(const CuentaContableApp());
 }
 
