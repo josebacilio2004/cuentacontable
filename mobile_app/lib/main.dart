@@ -6,11 +6,15 @@ import 'package:cuentacontable_mobile/features/auth/login_screen.dart';
 import 'package:cuentacontable_mobile/features/dashboard/dashboard_screen.dart';
 import 'package:cuentacontable_mobile/features/credits/credits_screen.dart';
 import 'package:cuentacontable_mobile/features/goals/goals_screen.dart';
+import 'package:cuentacontable_mobile/features/planning/planning_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+
+import 'package:cuentacontable_mobile/core/config/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseConfig.initialize();
+  await NotificationService.initialize();
   runApp(const CuentaContableApp());
 }
 
@@ -65,7 +69,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
           DashboardScreen(),
           CreditsScreen(),
           GoalsScreen(),
-          Center(child: Text('Perfil')),
+          PlanningScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -79,7 +83,7 @@ class _DashboardWrapperState extends State<DashboardWrapper> {
           BottomNavigationBarItem(icon: Icon(LucideIcons.layoutDashboard), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(LucideIcons.creditCard), label: 'Créditos'),
           BottomNavigationBarItem(icon: Icon(LucideIcons.target), label: 'Metas'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.user), label: 'Perfil'),
+          BottomNavigationBarItem(icon: Icon(LucideIcons.trendingUp), label: 'Planificación'),
         ],
       ),
     );

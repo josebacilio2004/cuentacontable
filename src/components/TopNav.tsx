@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Search, X, Check, AlertCircle, Info, Wallet } from 'lucide-react';
+import { Bell, Search, X, Check, AlertCircle, Info, Wallet, Eye, EyeOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card } from './UI';
 import { format } from 'date-fns';
@@ -29,6 +29,13 @@ export function TopNav({ user }: TopNavProps) {
   const [balance, setBalance] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isBalanceHidden, setIsBalanceHidden] = useState(() => {
+    return localStorage.getItem('hide_balance') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hide_balance', isBalanceHidden.toString());
+  }, [isBalanceHidden]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -131,10 +138,20 @@ export function TopNav({ user }: TopNavProps) {
                />
             </div>
             {/* Contador de Saldo Real */}
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Saldo:</span>
-               <span className="text-sm font-black text-white">S/ {balance.toLocaleString()}</span>
+            <div className="flex items-center gap-2 px-4 py-1.5 glass rounded-xl border border-emerald-500/20">
+               <button 
+                 onClick={() => setIsBalanceHidden(!isBalanceHidden)}
+                 className="p-1 hover:bg-white/10 rounded-md transition-all text-emerald-400"
+               >
+                 {isBalanceHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+               </button>
+               <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest ml-1">Saldo:</span>
+               <span className={cn(
+                 "text-sm font-black text-white transition-all duration-300",
+                 isBalanceHidden && "blur-balance"
+               )}>
+                 S/ {balance.toLocaleString()}
+               </span>
             </div>
          </div>
       </div>

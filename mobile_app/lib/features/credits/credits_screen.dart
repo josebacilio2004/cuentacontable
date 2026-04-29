@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cuentacontable_mobile/core/config/supabase_config.dart';
 import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:cuentacontable_mobile/shared/widgets/credit_modal.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 class CreditsScreen extends StatelessWidget {
@@ -15,14 +16,23 @@ class CreditsScreen extends StatelessWidget {
         .order('created_at', ascending: false);
   }
 
+  void _showCreditModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const CreditModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Tus Créditos')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => _showCreditModal(context),
         backgroundColor: AppTheme.indigoAccent,
-        child: const Icon(LucideIcons.plus),
+        child: const Icon(LucideIcons.plus, color: Colors.white),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _creditsStream(),

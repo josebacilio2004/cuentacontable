@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:cuentacontable_mobile/core/config/biometric_service.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +16,37 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _canBiometric = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final available = await BiometricService.isAvailable();
+    setState(() => _canBiometric = available);
+  }
+
+  Future<void> _biometricSignIn() async {
+    final authenticated = await BiometricService.authenticate();
+    if (authenticated) {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('saved_email');
+      final pass = prefs.getString('saved_password');
+      
+      if (email != null && pass != null) {
+        _emailController.text = email;
+        _passwordController.text = pass;
+        _signIn();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Inicia sesión manualmente primero para activar biometría.')),
+        );
+      }
+    }
+  }
 
   Future<void> _signIn() async {
     setState(() => _isLoading = true);
@@ -22,6 +55,12 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      
+      // Guardar para biometría futura (en un app real usaríamos Secure Storage)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_email', _emailController.text.trim());
+      await prefs.setString('saved_password', _passwordController.text.trim());
+      
     } on AuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
@@ -58,21 +97,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
                 _inputField('Contraseña', _passwordController, LucideIcons.lock, true),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  height: 60,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.indigoAccent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 8,
-                      shadowColor: AppTheme.indigoAccent.withOpacity(0.3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _signIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.indigoAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 8,
+                            shadowColor: AppTheme.indigoAccent.withOpacity(0.3),
+                          ),
+                          child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white) 
+                            : const Text('Iniciar Sesión', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
+                      ),
                     ),
-                    child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.white) 
-                      : const Text('Iniciar Sesión', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  ),
+                    if (_canBiometric) ...[
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        height: 60,
+                        width: 60,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _biometricSignIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.05),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: const Icon(LucideIcons.fingerprint, color: AppTheme.indigoAccent, size: 28),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

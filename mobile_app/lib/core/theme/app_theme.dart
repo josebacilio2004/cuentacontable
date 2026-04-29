@@ -30,7 +30,8 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+      titleTextStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white, letterSpacing: 1.5),
+      iconTheme: IconThemeData(color: Colors.white70),
     ),
   );
 }

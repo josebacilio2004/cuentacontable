@@ -13,8 +13,39 @@
   --color-glass-bg: rgba(15, 23, 42, 0.6);
   --color-glass-border: rgba(255, 255, 255, 0.1);
   
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-indigo {
+  background: rgba(99, 102, 241, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.blur-balance {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
 @layer base {

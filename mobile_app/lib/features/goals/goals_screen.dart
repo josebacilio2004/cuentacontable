@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cuentacontable_mobile/core/config/supabase_config.dart';
 import 'package:cuentacontable_mobile/core/theme/app_theme.dart';
+import 'package:cuentacontable_mobile/shared/widgets/goal_modal.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:intl/intl.dart';
 
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
@@ -17,18 +18,27 @@ class GoalsScreen extends StatelessWidget {
         .order('created_at', ascending: false);
   }
 
+  void _showGoalModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const GoalModal(),
+    );
+  }
+
   Future<void> _completeGoal(BuildContext context, Map<String, dynamic> goal) async {
     final client = SupabaseConfig.client;
     final userId = client.auth.currentUser!.id;
 
     try {
-      // 1. Actualizar Meta
       await client.from('savings_goals').update({
         'status': 'cumplido',
         'current_amount': goal['target_amount'],
       }).eq('id', goal['id']);
 
-      // 2. Registrar Ingreso
+      HapticFeedback.heavyImpact();
+
       await client.from('transactions').insert({
         'user_id': userId,
         'amount': goal['target_amount'],
@@ -38,13 +48,17 @@ class GoalsScreen extends StatelessWidget {
         'date': DateTime.now().toIso8601String().split('T')[0],
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('¡Meta cumplida y saldo actualizado!'), backgroundColor: Colors.greenAccent),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('¡Meta cumplida y saldo actualizado!'), backgroundColor: Colors.greenAccent),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
@@ -52,6 +66,11 @@ class GoalsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Tus Metas')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showGoalModal(context),
+        backgroundColor: AppTheme.indigoAccent,
+        child: const Icon(LucideIcons.plus, color: Colors.white),
+      ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _goalsStream(),
         builder: (context, snapshot) {
@@ -84,9 +103,9 @@ class GoalsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: isCompleted ? Colors.green.withOpacity(0.05) : AppTheme.slateCard,
+        color: isCompleted ? Colors.green.withAlpha(13) : AppTheme.slateCard,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isCompleted ? Colors.green.withOpacity(0.2) : Colors.white10),
+        border: Border.all(color: isCompleted ? Colors.green.withAlpha(51) : Colors.white10),
       ),
       child: Column(
         children: [
@@ -101,7 +120,7 @@ class GoalsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: (isCompleted ? Colors.green : AppTheme.indigoAccent).withOpacity(0.1),
+                        color: (isCompleted ? Colors.green : AppTheme.indigoAccent).withAlpha(25),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(isCompleted ? LucideIcons.star : LucideIcons.target, color: isCompleted ? Colors.greenAccent : AppTheme.indigoAccent, size: 20),
