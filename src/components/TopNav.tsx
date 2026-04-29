@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Search, X, Check, AlertCircle, Info, Wallet } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Card } from './UI';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const mockNotifications = [
   { id: 1, title: 'Pago Próximo', message: 'Tu crédito BCP vence en 3 días.', time: 'Hace 2 horas', type: 'warning', unread: true },
